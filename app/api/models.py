@@ -48,3 +48,58 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return f'Email: {self.email}; Username: {self.username}'
+
+
+class Tag(models.Model):
+    """A tag that declares the priority of a task."""
+
+    caption = models.CharField(max_length=30)
+
+    def __str__(self) -> str:
+        return f'{self.caption}'
+
+
+class Category(models.Model):
+    """A category for each task."""
+
+    name = models.CharField(max_length=30)
+
+    def __str__(self) -> str:
+        return f'{self.name}'
+
+
+class Task(models.Model):
+    """A task with different status options."""
+
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    due_date = models.DateField()
+
+    category = models.OneToOneField(
+        Category,
+        on_delete=models.DO_NOTHING,
+        related_name='the_task'
+    )
+    priority = models.OneToOneField(
+        Tag,
+        on_delete=models.DO_NOTHING,
+        related_name='task'
+    )
+
+    def __str__(self) -> str:
+        return f'{self.title}, ID: {self.id}'
+
+
+class TaskGroup(models.Model):
+    """Overview of all the users who work on a task."""
+
+    participants = models.ManyToManyField(CustomUser)
+    task = models.OneToOneField(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='task_group'
+
+    )
+
+    def __str__(self) -> str:
+        return f'Task ID: {self.task.id}, Group ID: {self.id}'
