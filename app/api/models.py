@@ -83,41 +83,6 @@ class Position(models.Model):
         return f'{self.title}'
 
 
-class TaskGroup(models.Model):
-
-    """Overview of all the users who work on a task."""
-
-    def calculate_members(self):
-        """returns the current number of team members for a task."""
-        pass
-
-    def __str__(self) -> str:
-        return f'Task ID: {self.task.id}, Group ID: {self.id}'
-
-
-class UserProfile(models.Model):
-    """A profile for each user."""
-    owner = models.OneToOneField(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='profile'
-    )
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    phone_number = models.IntegerField()
-
-    position = models.ForeignKey(
-        Position,
-        on_delete=models.DO_NOTHING,
-        related_name='position_userprofile_field'
-    )
-    task_group = models.ForeignKey(
-        TaskGroup,
-        on_delete=models.CASCADE,
-        related_name='task_group_userprofile_field'
-    )
-
-
 class Task(models.Model):
     """A task with different status options."""
 
@@ -140,11 +105,36 @@ class Task(models.Model):
         on_delete=models.DO_NOTHING,
         related_name='status_task_field'
     )
-    task_group = models.OneToOneField(
-        TaskGroup,
-        on_delete=models.CASCADE,
-        related_name='task_group_task_field'
-    )
+
+    def calculate_members(self):
+        """Calculates and returns the current number of team members for the
+        task.
+        """
+
+        pass
 
     def __str__(self) -> str:
-        return f'Title: {self.title} - ID: {self.id} - Status: {self.status}'
+        return f'ID: {self.id} - Status: {self.status} - Title: {self.title}'
+
+
+class UserProfile(models.Model):
+    """A profile for each user."""
+    owner = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    phone_number = models.IntegerField()
+
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.DO_NOTHING,
+        related_name='position_userprofile_field'
+    )
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.DO_NOTHING,
+        related_name='task_userprofile_field'
+    )
