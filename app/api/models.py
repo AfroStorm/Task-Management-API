@@ -45,7 +45,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
     def __str__(self) -> str:
-        return f'Email: {self.email}; Username: {self.username}'
+        return f'Email: {self.email}'
 
 
 class Priority(models.Model):
@@ -93,17 +93,23 @@ class Task(models.Model):
     category = models.OneToOneField(
         Category,
         on_delete=models.DO_NOTHING,
-        related_name='category_task_field'
+        related_name='category_task_field',
+        null=True,
+        blank=True
     )
     priority = models.OneToOneField(
         Priority,
         on_delete=models.DO_NOTHING,
-        related_name='priority_task_field'
+        related_name='priority_task_field',
+        null=True,
+        blank=True
     )
     status = models.ForeignKey(
         Status,
         on_delete=models.DO_NOTHING,
-        related_name='status_task_field'
+        related_name='status_task_field',
+        null=True,
+        blank=True
     )
 
     def calculate_members(self):
@@ -126,15 +132,22 @@ class UserProfile(models.Model):
     )
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    phone_number = models.IntegerField()
+    phone_number = models.IntegerField(null=True)
 
     position = models.ForeignKey(
         Position,
         on_delete=models.DO_NOTHING,
-        related_name='position_userprofile_field'
+        related_name='position_userprofile_field',
+        null=True,
+        blank=True
     )
     task = models.ForeignKey(
         Task,
         on_delete=models.DO_NOTHING,
-        related_name='task_userprofile_field'
+        related_name='task_userprofile_field',
+        null=True,
+        blank=True
     )
+
+    def __str__(self) -> str:
+        return f'Email: {self.owner.email} - Phone nr.:{self.phone_number}'
