@@ -69,6 +69,7 @@ class Category(models.Model):
     """A category for each task."""
 
     name = models.CharField(max_length=30)
+    description = models.TextField(max_length=255, blank=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -83,6 +84,50 @@ class Position(models.Model):
         return f'{self.title}'
 
 
+class UserProfile(models.Model):
+    """A profile for each user."""
+    owner = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    phone_number = models.IntegerField(null=True)
+    email = models.EmailField(max_length=255, blank=True)
+
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.DO_NOTHING,
+        related_name='position_userprofile_field',
+        null=True,
+        blank=True
+    )
+
+    def __str__(self) -> str:
+        return f'Email: {self.owner.email} - Phone nr.:{self.phone_number}'
+
+
+class TaskGroup(models.Model):
+    """Team of employees with different positions that take on a task."""
+
+    name = models.CharField(max_length=100)
+    required_positions = models.ManyToManyField(Position)
+    team_members = models.ManyToManyField(
+        UserProfile,
+        related_name='task_group',
+    )
+
+    def calculate_members(self):
+        """Calculates and returns the current number of team members for the
+            task group.
+            """
+        return self.team_members.count()
+
+    def __str__(self) -> str:
+        return f'ID: {self.id} - Group Name:{self.name}'
+
+
 class Task(models.Model):
     """A task with different status options."""
 
@@ -90,14 +135,14 @@ class Task(models.Model):
     description = models.TextField()
     due_date = models.DateField()
 
-    category = models.OneToOneField(
+    category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
         related_name='category_task_field',
         null=True,
         blank=True
     )
-    priority = models.OneToOneField(
+    priority = models.ForeignKey(
         Priority,
         on_delete=models.DO_NOTHING,
         related_name='priority_task_field',
@@ -111,43 +156,20 @@ class Task(models.Model):
         null=True,
         blank=True
     )
-
-    def calculate_members(self):
-        """Calculates and returns the current number of team members for the
-        task.
-        """
-
-        pass
+    task_manager = models.ForeignKey(
+        UserProfile,
+        on_delete=models.DO_NOTHING,
+        related_name='task_to_manage',
+        null=True,
+        blank=True
+    )
+    task_group = models.OneToOneField(
+        TaskGroup,
+        on_delete=models.CASCADE,
+        related_name='task',
+        null=True,
+        blank=True
+    )
 
     def __str__(self) -> str:
         return f'ID: {self.id} - Status: {self.status} - Title: {self.title}'
-
-
-class UserProfile(models.Model):
-    """A profile for each user."""
-    owner = models.OneToOneField(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='profile'
-    )
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    phone_number = models.IntegerField(null=True)
-
-    position = models.ForeignKey(
-        Position,
-        on_delete=models.DO_NOTHING,
-        related_name='position_userprofile_field',
-        null=True,
-        blank=True
-    )
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.DO_NOTHING,
-        related_name='task_userprofile_field',
-        null=True,
-        blank=True
-    )
-
-    def __str__(self) -> str:
-        return f'Email: {self.owner.email} - Phone nr.:{self.phone_number}'

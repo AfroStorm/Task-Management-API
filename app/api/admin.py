@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
-from .models import UserProfile, Task, Category, Status, Priority, Position
+from api.models import UserProfile, Task, Category, Status, Priority, Position, \
+    TaskGroup
 
 user = get_user_model()
 
@@ -26,6 +27,7 @@ class CustomUserAdmin(BaseUserAdmin):
 admin.site.register(user, CustomUserAdmin)
 admin.site.register(UserProfile)
 admin.site.register(Task)
+admin.site.register(TaskGroup)
 admin.site.register(Priority)
 admin.site.register(Status)
 admin.site.register(Category)
