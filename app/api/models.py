@@ -77,8 +77,16 @@ class Category(models.Model):
 
 class Position(models.Model):
     """Describes the position/role of a user/team member."""
+
     title = models.CharField(max_length=100)
     description = models.TextField()
+    related_category = models.ForeignKey(
+        Category,
+        on_delete=models.DO_NOTHING,
+        related_name='positions',
+        blank=True,
+        null=True
+    )
 
     def __str__(self) -> str:
         return f'{self.title}'
@@ -86,6 +94,7 @@ class Position(models.Model):
 
 class UserProfile(models.Model):
     """A profile for each user."""
+
     owner = models.OneToOneField(
         CustomUser,
         on_delete=models.CASCADE,
@@ -122,6 +131,7 @@ class TaskGroup(models.Model):
         """Calculates and returns the current number of team members for the
             task group.
             """
+
         return self.team_members.count()
 
     def __str__(self) -> str:

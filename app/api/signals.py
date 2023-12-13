@@ -12,6 +12,7 @@ def create_profile(sender, instance, created, **kwargs):
     """Signal handler to create a new UserProfile for each new User
     instance.
     """
+
     if created:
         UserProfile.objects.create(
             owner=instance,
@@ -26,6 +27,7 @@ def creaate_task_group(sender, instance, created, **kwargs):
     """Signal handler to create a new TaskGroup instance for each new Task
     instance.
     """
+
     if created:
         task_group = TaskGroup.objects.create(
             name=f'TaskGroup of {instance.title}'

@@ -1,6 +1,7 @@
 from rest_framework import serializers, permissions
 from django.contrib.auth import get_user_model
-from .models import UserProfile, Task, Category, Status, Priority, Position
+from .models import UserProfile, Task, Category, Status, Priority, Position, \
+    TaskGroup
 
 User = get_user_model()
 
@@ -70,8 +71,43 @@ class PositionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TaskGroupSerializer(serializers.ModelSerializer):
+    """Serializes the TaskGroup model."""
+
+    required_positions = serializers.SlugRelatedField(
+        queryset=Position.objects.all(),
+        many=True,
+        slug_field='title'
+    )
+    team_members = serializers.SlugRelatedField(
+        queryset=UserProfile.objects.all(),
+        many=True,
+        slug_field='email'
+    )
+
+    class Meta:
+        model = TaskGroup
+        fields = ['id', 'name', 'required_positions', 'team_members', 'task']
+
+    def get_fields(self):
+        """Prevents the authorized task manager from manually changing the
+        task of the TaaskGroup."""
+        request = self.context['request']
+        fields = super().get_fields()
+
+        if request.user.is_staff:
+            return fields
+
+        elif request.method not in permissions.SAFE_METHODS:
+            fields['task'].read_only = True
+
+            return fields
+
+        return fields
+
+
 class TaskSerializer(serializers.ModelSerializer):
-    """Serializes the Position model."""
+    """Serializes the Task model."""
 
     class Meta:
         model = Task
@@ -81,7 +117,7 @@ class TaskSerializer(serializers.ModelSerializer):
         ]
 
     def get_fields(self):
-        """Prevents non-staff users from changing the taskgroup for the task.
+        """Prevents non-admin users from changing the taskgroup for the task.
         """
 
         request = self.context['request']
