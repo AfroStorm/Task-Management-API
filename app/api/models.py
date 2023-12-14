@@ -108,7 +108,7 @@ class UserProfile(models.Model):
     position = models.ForeignKey(
         Position,
         on_delete=models.DO_NOTHING,
-        related_name='position_userprofile_field',
+        related_name='incumbents',
         null=True,
         blank=True
     )
@@ -124,7 +124,7 @@ class TaskGroup(models.Model):
     required_positions = models.ManyToManyField(Position)
     team_members = models.ManyToManyField(
         UserProfile,
-        related_name='task_group',
+        related_name='task_groups',
     )
 
     def calculate_members(self):
@@ -148,35 +148,35 @@ class Task(models.Model):
     category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
-        related_name='category_task_field',
+        related_name='categorized_tasks',
         null=True,
         blank=True
     )
     priority = models.ForeignKey(
         Priority,
         on_delete=models.DO_NOTHING,
-        related_name='priority_task_field',
+        related_name='tasks_to_prioritize',
         null=True,
         blank=True
     )
     status = models.ForeignKey(
         Status,
         on_delete=models.DO_NOTHING,
-        related_name='status_task_field',
+        related_name='task_status',
         null=True,
         blank=True
     )
     task_manager = models.ForeignKey(
         UserProfile,
         on_delete=models.DO_NOTHING,
-        related_name='task_to_manage',
+        related_name='tasks_to_manage',
         null=True,
         blank=True
     )
     task_group = models.OneToOneField(
         TaskGroup,
         on_delete=models.CASCADE,
-        related_name='task',
+        related_name='assigned_task',
         null=True,
         blank=True
     )

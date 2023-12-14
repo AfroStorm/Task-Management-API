@@ -9,6 +9,7 @@ router.register('position', views.PositionView)
 router.register('category', views.CategoryView)
 router.register('priority', views.PriorityView)
 router.register('status', views.StatusView)
+router.register('userprofile', views.UserProfileView)
 
 
 urlpatterns = [

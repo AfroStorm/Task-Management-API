@@ -2,13 +2,14 @@ from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 from api.serializers import TaskSerializer, PrioritySerializer, \
     StatusSerializer, CategorySerializer, PositionSerializer, \
-    TaskGroupSerializer
-from api.models import Task, Priority, Status, Category, Position, TaskGroup
+    TaskGroupSerializer, UserProfileSerializer
+from api.models import Task, Priority, Status, Category, Position, \
+    TaskGroup, UserProfile
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from api.permissions import IsTaskManager
+from api.permissions import IsTaskManager, IsOwner
 # Create your views here.
 
 
@@ -109,6 +110,34 @@ class PriorityView(ModelViewSet):
                 self.action == 'partial_update' or \
                 self.action == 'destroy':
             permission_classes = [IsAdminUser]
+
+        else:
+            permission_classes = []
+
+        return [permission() for permission in permission_classes]
+
+
+class UserProfileView(ModelViewSet):
+    """ModelViewSett for UserProfile model with basic crud functions."""
+
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+    authentication_classes = [TokenAuthentication]
+
+    def get_permissions(self):
+        """Safe methods allowed to authenticated users. Update and partial
+        update allowed to owner. Admin has all rights."""
+        if self.action == 'list' or \
+                self.action == 'retrieve':
+            permission_classes = [IsAuthenticated]
+
+        elif self.action == 'create' or \
+                self.action == 'destroy':
+            permission_classes = [IsAdminUser]
+
+        elif self.action == 'update' or \
+                self.action == 'partial_update':
+            permission_classes = [IsAdminUser | IsOwner]
 
         else:
             permission_classes = []

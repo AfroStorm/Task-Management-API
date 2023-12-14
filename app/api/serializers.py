@@ -71,6 +71,44 @@ class PositionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializes the UserProfile model."""
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'id', 'owner', 'first_name', 'last_name', 'phone_number', 'email',
+            'position', 'task_groups', 'tasks_to_manage'
+        ]
+
+    def get_fields(self):
+        """Prevents unauthorized users from modifying certain fields."""
+
+        request = self.context['request']
+        fields = super().get_fields()
+
+        if request.user.is_staff:
+            return fields
+
+        elif request.method not in permissions.SAFE_METHODS:
+            if request.user.is_authenticated:
+                read_only_fields = ['owner', 'task_groups', 'tasks_to_manage']
+                for field in read_only_fields:
+                    fields[field].read_only = True
+
+                return fields
+
+            # Unatuhenticated users all fields will be read only
+            else:
+                read_only_fields = fields
+                for field in read_only_fields:
+                    fields[field].read_only = True
+
+                return fields
+
+        return fields
+
+
 class TaskGroupSerializer(serializers.ModelSerializer):
     """Serializes the TaskGroup model."""
 
@@ -87,11 +125,11 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskGroup
-        fields = ['id', 'name', 'required_positions', 'team_members', 'task']
+        fields = ['id', 'name', 'required_positions',
+                  'team_members', 'assigned_task']
 
     def get_fields(self):
-        """Prevents the authorized task manager from manually changing the
-        task of the TaaskGroup."""
+        """Prevents unauthorized users from modifying certain fields."""
         request = self.context['request']
         fields = super().get_fields()
 
@@ -99,15 +137,40 @@ class TaskGroupSerializer(serializers.ModelSerializer):
             return fields
 
         elif request.method not in permissions.SAFE_METHODS:
-            fields['task'].read_only = True
+            if request.user.is_authenticated:
+                fields['assigned_task'].read_only = True
 
-            return fields
+                return fields
+
+            # Unatuhenticated users all fields will be read only
+            else:
+                read_only_fields = fields
+                for field in read_only_fields:
+                    fields[field].read_only = True
+
+                return fields
 
         return fields
 
 
 class TaskSerializer(serializers.ModelSerializer):
     """Serializes the Task model."""
+    task_manager = serializers.SlugRelatedField(
+        queryset=UserProfile.objects.all(),
+        slug_field='email'
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='name'
+    )
+    priority = serializers.SlugRelatedField(
+        queryset=Priority.objects.all(),
+        slug_field='caption'
+    )
+    status = serializers.SlugRelatedField(
+        queryset=Status.objects.all(),
+        slug_field='caption'
+    )
 
     class Meta:
         model = Task
@@ -117,8 +180,7 @@ class TaskSerializer(serializers.ModelSerializer):
         ]
 
     def get_fields(self):
-        """Prevents non-admin users from changing the taskgroup for the task.
-        """
+        """Prevents unauthorized users from modifying certain fields."""
 
         request = self.context['request']
         fields = super().get_fields()
@@ -127,10 +189,19 @@ class TaskSerializer(serializers.ModelSerializer):
             return fields
 
         elif request.method not in permissions.SAFE_METHODS:
-            fields['task_group'].read_only = True
-            fields['task_manager'].read_only = True
+            if request.user.is_authenticated:
+                fields['task_group'].read_only = True
+                fields['task_manager'].read_only = True
 
-            return fields
+                return fields
+
+            # Unatuhenticated users all fields will be read only
+            else:
+                read_only_fields = fields
+                for field in read_only_fields:
+                    fields[field].read_only = True
+
+                return fields
 
         return fields
 

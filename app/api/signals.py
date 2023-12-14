@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from api.models import UserProfile, Task, TaskGroup
+from api.models import UserProfile, Task, TaskGroup, Position
 
 User = get_user_model()
 
@@ -33,7 +33,17 @@ def creaate_task_group(sender, instance, created, **kwargs):
             name=f'TaskGroup of {instance.title}'
         )
         instance.task_group = task_group
-        instance.save()
 
+        # Adds the task manager to the tem member field
         if instance.task_manager:
             task_group.team_members.add(instance.task_manager)
+
+        # Adds sample positions to the required positions field
+        if instance.category:
+            required_positions = Position.objects.filter(
+                related_category=instance.category
+            ).distinct().order_by('title')[:3]
+
+            task_group.required_positions.add(*required_positions)
+
+        instance.save()

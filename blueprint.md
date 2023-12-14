@@ -59,3 +59,10 @@ Create an API for a task management system that allows users to manage their tas
 - Export/Import tasks in standard formats like JSON or CSV.
 
 This project provides a good balance of CRUD operations, user authentication, and additional features to enhance the overall user experience. It can be extended based on your interests and the complexity you want to add to the project.
+
+
+## Next
+- restrict modifications on the userprofile serialzer fields (owner,task_group,tasks_to_manage).
+- Changing the owner is only allowed to admin.
+- User can only remove himself from task_group.
+- User can only remove himself from the task
