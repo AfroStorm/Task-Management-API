@@ -9,7 +9,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from api.permissions import IsTaskManager, IsOwner
+from api.permissions import IsOwner, IsTaskManager
 # Create your views here.
 
 
@@ -127,6 +127,7 @@ class UserProfileView(ModelViewSet):
     def get_permissions(self):
         """Safe methods allowed to authenticated users. Update and partial
         update allowed to owner. Admin has all rights."""
+
         if self.action == 'list' or \
                 self.action == 'retrieve':
             permission_classes = [IsAuthenticated]
@@ -153,19 +154,20 @@ class TaskGroupView(ModelViewSet):
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
+        """Gives specific permissions depending on the view actions."""
+
         if self.action == 'list' or \
                 self.action == 'retrieve':
             permission_classes = [IsAuthenticated]
 
-        elif self.action == 'create':
+        # Only admin can manually create/destroy a taskgroup
+        elif self.action == 'create' and \
+                self.action == 'destroy':
             permission_classes = [IsAdminUser]
 
         elif self.action == 'update' or \
                 self.action == 'partial_update':
-            permission_classes = [IsAdminUser | IsTaskManager]
-
-        elif self.action == 'destroy':
-            permission_classes = [IsAdminUser]
+            permission_classes = [IsAdminUser | IsOwner]
 
         else:
             permission_classes = []
@@ -181,17 +183,21 @@ class TaskView(ModelViewSet):
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
-        """Allows only admin-users or task manager to modify the task."""
+        """Gives specific permissions depending on the view actions."""
 
         if self.action == 'list' or \
-                self.action == 'create' or \
                 self.action == 'retrieve':
             permission_classes = [IsAuthenticated]
+
+        # Only admin or authenticated user with a position that has
+            # is_task_manager true can create
+        elif self.action == 'create':
+            permission_classes = [IsAdminUser | IsTaskManager]
 
         elif self.action == 'update' or \
                 self.action == 'partial_update' or \
                 self.action == 'destroy':
-            permission_classes = [IsAdminUser | IsTaskManager]
+            permission_classes = [IsAdminUser | IsOwner]
 
         else:
             permission_classes = []

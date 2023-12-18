@@ -80,6 +80,9 @@ class Position(models.Model):
 
     title = models.CharField(max_length=100)
     description = models.TextField()
+    # Allows employee to create a task and lead the task group
+    is_task_manager = models.BooleanField(default=False)
+
     related_category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
@@ -121,10 +124,10 @@ class TaskGroup(models.Model):
     """Team of employees with different positions that take on a task."""
 
     name = models.CharField(max_length=100)
-    required_positions = models.ManyToManyField(Position)
+    sought_after_positions = models.ManyToManyField(Position)
     team_members = models.ManyToManyField(
         UserProfile,
-        related_name='task_groups',
+        related_name='task_groups'
     )
 
     def calculate_members(self):
@@ -166,7 +169,7 @@ class Task(models.Model):
         null=True,
         blank=True
     )
-    task_manager = models.ForeignKey(
+    owner = models.ForeignKey(
         UserProfile,
         on_delete=models.DO_NOTHING,
         related_name='tasks_to_manage',

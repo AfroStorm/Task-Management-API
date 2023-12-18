@@ -2,6 +2,8 @@ from rest_framework import serializers, permissions
 from django.contrib.auth import get_user_model
 from .models import UserProfile, Task, Category, Status, Priority, Position, \
     TaskGroup
+from django.db.models.query import QuerySet
+
 
 User = get_user_model()
 
@@ -90,21 +92,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if request.user.is_staff:
             return fields
 
-        elif request.method not in permissions.SAFE_METHODS:
-            if request.user.is_authenticated:
-                read_only_fields = ['owner', 'task_groups', 'tasks_to_manage']
-                for field in read_only_fields:
-                    fields[field].read_only = True
+        elif request.user.is_authenticated:
+            read_only_fields = ['owner', 'task_groups', 'tasks_to_manage']
+            for field in read_only_fields:
+                fields[field].read_only = True
 
-                return fields
-
-            # Unatuhenticated users all fields will be read only
-            else:
-                read_only_fields = fields
-                for field in read_only_fields:
-                    fields[field].read_only = True
-
-                return fields
+        # Unatuhenticated users all fields will be read only
+        else:
+            for field in fields:
+                fields[field].read_only = True
 
         return fields
 
@@ -155,7 +151,7 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     """Serializes the Task model."""
-    task_manager = serializers.SlugRelatedField(
+    owner = serializers.SlugRelatedField(
         queryset=UserProfile.objects.all(),
         slug_field='email'
     )
@@ -176,32 +172,36 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = [
             'id', 'title', 'description', 'due_date', 'category', 'priority',
-            'status', 'task_manager', 'task_group'
+            'status', 'owner', 'task_group'
         ]
 
     def get_fields(self):
         """Prevents unauthorized users from modifying certain fields."""
-
         request = self.context['request']
         fields = super().get_fields()
+        # Debugging line
+        print(f"Type of self.instance: {type(self.instance)}")
 
         if request.user.is_staff:
             return fields
 
-        elif request.method not in permissions.SAFE_METHODS:
-            if request.user.is_authenticated:
-                fields['task_group'].read_only = True
-                fields['task_manager'].read_only = True
+        # Unatuhenticated users all fields will be read only
+        elif not hasattr(request.user, 'profile'):
+            for field in fields:
+                fields[field].read_only = True
 
-                return fields
+        # Check if self.instance is a queryset
+        elif isinstance(self.instance, QuerySet):
+            for obj in self.instance:
+                if hasattr(obj, 'owner') and request.user.profile == obj.owner:
+                    fields['task_group'].read_only = True
+                    fields['owner'].read_only = True
+                    break
 
-            # Unatuhenticated users all fields will be read only
-            else:
-                read_only_fields = fields
-                for field in read_only_fields:
-                    fields[field].read_only = True
-
-                return fields
+        # Check if self.instance is a single instance
+        elif hasattr(self.instance, 'owner') and request.user.profile == self.instance.owner:
+            fields['task_group'].read_only = True
+            fields['owner'].read_only = True
 
         return fields
 

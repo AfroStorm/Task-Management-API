@@ -62,7 +62,19 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 
 ## Next
-- restrict modifications on the userprofile serialzer fields (owner,task_group,tasks_to_manage).
-- Changing the owner is only allowed to admin.
-- User can only remove himself from task_group.
-- User can only remove himself from the task
+- only certain positions can become task manager
+(link is_task_manager field to position). --
+
+- Adding employees to a taskgroup should only be allowed to authorized 
+task managers or admin.
+- limit the pool of employees the task manager can chose from by the category
+of the task.
+- related category field of the position limits the employee to certain
+tasks.
+- make related category field a many to many relationship so a position
+can have multi disciplinary qualifications.
+- restrict create action for task view to only admin and is_task_manager
+
+- Add functionality of task group preffered positions field
+
+- continue the tests for task view

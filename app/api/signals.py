@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from api.models import UserProfile, Task, TaskGroup, Position
@@ -7,17 +7,20 @@ User = get_user_model()
 
 
 # User - UserProfile creation
-@receiver(post_save, sender=User)
-def create_profile(sender, instance, created, **kwargs):
-    """Signal handler to create a new UserProfile for each new User
+def create_or_update_profile(sender, instance, created, **kwargs):
+    """Signal handler to create or update a new UserProfile for each User
     instance.
     """
 
-    if created:
+    if created or not hasattr(instance, 'profile'):
+        # If the profile doesn't exist, create it
         UserProfile.objects.create(
             owner=instance,
             email=instance.email
         )
+    else:
+        # If the profile exists, update it
+        instance.profile.email = instance.email
         instance.profile.save()
 
 
@@ -34,16 +37,15 @@ def creaate_task_group(sender, instance, created, **kwargs):
         )
         instance.task_group = task_group
 
-        # Adds the task manager to the tem member field
-        if instance.task_manager:
-            task_group.team_members.add(instance.task_manager)
+        # Adds the task owner to the tem member field
+        task_group.team_members.add(instance.owner)
 
         # Adds sample positions to the required positions field
         if instance.category:
-            required_positions = Position.objects.filter(
+            positions = Position.objects.filter(
                 related_category=instance.category
             ).distinct().order_by('title')[:3]
 
-            task_group.required_positions.add(*required_positions)
+            task_group.sought_after_positions.add(*positions)
 
         instance.save()
