@@ -153,7 +153,8 @@ class TaskSerializer(serializers.ModelSerializer):
     """Serializes the Task model."""
     owner = serializers.SlugRelatedField(
         queryset=UserProfile.objects.all(),
-        slug_field='email'
+        slug_field='email',
+        required=False
     )
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
@@ -174,6 +175,9 @@ class TaskSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'due_date', 'category', 'priority',
             'status', 'owner', 'task_group'
         ]
+        extra_kwargs = {
+            'task_group': {'required': False}
+        }
 
     def get_fields(self):
         """Prevents unauthorized users from modifying certain fields."""

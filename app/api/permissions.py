@@ -5,12 +5,12 @@ from api.models import UserProfile, Task, TaskGroup
 class IsTaskManager(permissions.BasePermission):
     """Allows access only to task manager."""
 
-    def has_object_permission(self, request, view, obj):
+    def has_permission(self, request, view):
+        if hasattr(request.user.profile.position, 'is_task_manager'):
+            if request.user.profile.position.is_task_manager and \
+                    request.user.is_authenticated:
 
-        if request.user.profile.position.is_task_manager and \
-                request.user.is_authenticated:
-
-            return True
+                return True
 
 
 class IsOwner(permissions.BasePermission):

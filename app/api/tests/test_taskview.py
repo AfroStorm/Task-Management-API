@@ -1,8 +1,6 @@
-from rest_framework.test import APIClient, APITestCase
-from django.test import TestCase
-from rest_framework.authtoken.models import Token
+from rest_framework.test import APITestCase
 from datetime import date
-from api import views
+from django.urls import reverse
 from api.models import Priority, Status, Category, Position, UserProfile, \
     Task, TaskGroup
 from django.contrib.auth import get_user_model
@@ -11,7 +9,7 @@ from rest_framework import status
 User = get_user_model()
 
 
-class TestTaskVIew(TestCase):
+class TestTaskVIew(APITestCase):
     """Tests the permissions of the task view."""
 
     def setUp(self) -> None:
@@ -21,9 +19,6 @@ class TestTaskVIew(TestCase):
             email='peterpahn@gmail.com',
             password='blabla123.'
         )
-
-        # Creating a user token
-        self.token, created = Token.objects.get_or_create(user=self.user)
 
         # Priority instance
         caption = 'High Priority'
@@ -79,19 +74,106 @@ class TestTaskVIew(TestCase):
             priority=self.priority,
             status=self.status,
             owner=self.userprofile,
-            task_group=self.task_group,
+            task_group=self.task_group
         )
 
-    def test_authenticated_user_can_access_list(self):
-        """Tests if the list view action allows only
-        authenticated users."""
+    # SAFE MEHODS
+    # def test_authenticated_user_can_access_list(self):
+    #     """Tests if the list view action allows authenticated users."""
 
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+    #     self.client.force_authenticate(user=self.user)
+    #     response = self.client.get('http://localhost:8000/api/tasks/')
 
-        response = client.get('http://localhost:8000/api/tasks/')
+    #     print(response.status_code)
+    #     print(response.content)
 
-        print(response.status_code)
-        print(response.content)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    # def test_unauthenticated_user_cant_access_list(self):
+    #     """Tests if the list view action disallows unauthenticated users."""
+
+    #     response = self.client.get('http://localhost:8000/api/tasks/')
+
+    #     print(response.status_code)
+    #     print(response.content)
+
+    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # def test_authenticated_user_can_access_retrieve(self):
+    #     """Tests if the retrieve view action allows authenticated users."""
+
+    #     self.client.force_authenticate(user=self.user)
+    #     url = reverse('task-detail', args=[self.task.id])
+    #     response = self.client.get(url)
+
+    #     print(response.status_code)
+    #     print(response.content)
+
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # def test_unauthenticated_user_cant_access_retrieve(self):
+    #     """Tests if the retrieve view action disallows unauthenticated users.
+    #     """
+
+    #     url = reverse('task-detail', args=[self.task.id])
+    #     response = self.client.get(url)
+
+    #     print(response.status_code)
+    #     print(response.content)
+
+    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # UNSAFE METHODS
+    # def test_task_manager_can_access_create(self):
+    #     """Tests if the create view action allows authenticated task
+    #     manager and, if the taskgroup is created, and if the taskgroup and
+    #     the owner are set to the newly created task."""
+
+    #     self.client.force_authenticate(user=self.user)
+    #     self.user.profile.position.is_task_manager = True
+    #     url = reverse('task-list')
+    #     data = {
+    #         'title': 'The first Task',
+    #         'description': 'The task to be tested.',
+    #         'due_date': date(2023, 1, 15),
+    #         'category': self.category.name,
+    #         'priority': self.priority.caption,
+    #         'status': self.status.caption,
+    #     }
+
+    #     response = self.client.post(url, data, format='json')
+
+    #     # Check if the task was created
+    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    #     # Check if the assigned taskgroup was created
+    #     task_group_id = response.data["task_group"]
+    #     task_group = TaskGroup.objects.get(id=task_group_id)
+    #     self.assertIsNotNone(task_group)
+
+    #     # Check if the assigned owner was created
+    #     owner_email = response.data['owner']
+    #     user = User.objects.get(email=owner_email)
+    #     owner = UserProfile.objects.get(owner=user.id)
+    #     self.assertIsNotNone(owner)
+
+    def test_none_task_manager_cant_access_create(self):
+        """Tests if the create view action allows none task
+        manager."""
+
+        self.client.force_authenticate(user=self.user)
+        self.user.profile.position.is_task_manager = False
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        # Check if permission is denied for non task manager
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
