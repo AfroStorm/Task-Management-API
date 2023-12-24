@@ -1,4 +1,4 @@
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from django.test import TestCase
 from rest_framework.authtoken.models import Token
 from datetime import date
@@ -17,11 +17,9 @@ class TestTaskVIew(TestCase):
     def setUp(self) -> None:
 
         # Creating a user instance
-        email = 'peterpahn@gmail.com'
-        password = 'blabla123.'
         self.user = User.objects.create(
-            email=email,
-            password=password
+            email='peterpahn@gmail.com',
+            password='blabla123.'
         )
 
         # Creating a user token
@@ -36,65 +34,47 @@ class TestTaskVIew(TestCase):
         self.status = Status.objects.create(caption=caption)
 
         # Category instance
-        name = 'Human Resource Management'
-        description = 'Human Resource Management task category involves'\
-            'overseeing recruitment, employee development, performance'\
-            'evaluation, and maintaining a positive workplace culture to'\
-            'optimize the organizations human capital.'
         self.category = Category.objects.create(
-            name=name,
-            description=description
+            name='Human Resource Management',
+            description='Human Resource Management task category involves'
+            'overseeing recruitment, employee development, performance'
+            'evaluation, and maintaining a positive workplace culture to'
+            'optimize the organizations human capital.'
         )
 
         # Position instance
-        title = 'Human Resource Specialist'
-        description = 'A Human Resource Specialist focuses on recruitment,'\
-            'employee relations, benefits administration, and workforce'\
-            'planning, ensuring effective management of human resources'\
-            'within an organization.'
-        is_task_manager = False
-        related_category = self.category
         self.position = Position.objects.create(
-            title=title,
-            description=description,
-            is_task_manager=is_task_manager,
-            related_category=related_category
+            title='Human Resource Specialist',
+            description='A Human Resource Specialist focuses on recruitment,'
+            'employee relations, benefits administration, and workforce'
+            'planning, ensuring effective management of human resources'
+            'within an organization.',
+            is_task_manager=False,
+            related_category=self.category
         )
 
         # Creating a userprofile instance
-        owner = self.user
-        first_name = 'Peter'
-        last_name = 'Pahn'
-        phone_number = int('0163557799')
-        email = self.user.email
-        position = self.position
         self.userprofile = UserProfile.objects.create(
-            owner=owner,
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=phone_number,
-            email=email,
-            position=position
+            owner=self.user,
+            first_name='Peter',
+            last_name='Pahn',
+            phone_number=int('0163557799'),
+            email=self.user.email,
+            position=self.position
         )
 
         # Craeting a taskgroup instance
-        name = 'The first TaskGroup'
-        sought_after_position = self.position
-        team_member = self.userprofile
         self.task_group = TaskGroup.objects.create(
-            name=name
+            name='The first TaskGroup'
         )
-        self.task_group.sought_after_positions.set([sought_after_position])
-        self.task_group.team_members.set([team_member])
+        self.task_group.sought_after_positions.set([self.position])
+        self.task_group.team_members.set([self.userprofile])
 
         # Creating a task instance and assigning it to user
-        title = 'The first Task'
-        description = 'The task to be tested.'
-        due_date = date(2023, 1, 15)
         self.task = Task.objects.create(
-            title=title,
-            description=description,
-            due_date=due_date,
+            title='The first Task',
+            description='The task to be tested.',
+            due_date=date(2023, 1, 15),
             category=self.category,
             priority=self.priority,
             status=self.status,
