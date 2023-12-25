@@ -62,8 +62,6 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 
 ## Next
-- only certain positions can become task manager
-(link is_task_manager field to position). --
 
 - Adding employees to a taskgroup should only be allowed to authorized 
 task managers or admin.
@@ -73,8 +71,7 @@ of the task.
 tasks.
 - make related category field a many to many relationship so a position
 can have multi disciplinary qualifications.
-- restrict create action for task view to only admin and is_task_manager
-
 - Add functionality of task group preffered positions field
 
 - continue the tests for task view
+write tests for serializer functionality (to_representation / get_fields)
