@@ -92,253 +92,304 @@ class TestTaskVIew(APITestCase):
             task_group=self.task_group
         )
 
-    # SAFE MEHODS
-    # def test_authenticated_user_can_access_list(self):
-    #     """Tests if the list view action allows authenticated users."""
+    # List view
+    def test_authenticated_user_can_access_list(self):
+        """Tests if the list view action allows authenticated users."""
 
-    #     self.client.force_authenticate(user=self.user)
-    #     response = self.client.get('http://localhost:8000/api/tasks/')
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('http://localhost:8000/api/tasks/')
 
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # def test_unauthenticated_user_cant_access_list(self):
-    #     """Tests if the list view action disallows unauthenticated users."""
+    def test_unauthenticated_user_cant_access_list(self):
+        """Tests if the list view action disallows unauthenticated users."""
 
-    #     response = self.client.get('http://localhost:8000/api/tasks/')
+        response = self.client.get('http://localhost:8000/api/tasks/')
 
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # def test_authenticated_user_can_access_retrieve(self):
-    #     """Tests if the retrieve view action allows authenticated users."""
+    # Retrieve view
+    def test_authenticated_user_can_access_retrieve(self):
+        """Tests if the retrieve view action allows authenticated users."""
 
-    #     self.client.force_authenticate(user=self.user)
-    #     url = reverse('task-detail', args=[self.task.id])
-    #     response = self.client.get(url)
+        self.client.force_authenticate(user=self.user)
+        url = reverse('task-detail', args=[self.task.id])
+        response = self.client.get(url)
 
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # def test_unauthenticated_user_cant_access_retrieve(self):
-    #     """Tests if the retrieve view action disallows unauthenticated users.
-    #     """
+    def test_unauthenticated_user_cant_access_retrieve(self):
+        """Tests if the retrieve view action disallows unauthenticated users.
+        """
 
-    #     url = reverse('task-detail', args=[self.task.id])
-    #     response = self.client.get(url)
+        url = reverse('task-detail', args=[self.task.id])
+        response = self.client.get(url)
 
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # # UNSAFE METHODS
-    # def test_task_manager_can_access_create(self):
-    #     """Tests if the create view action allows authenticated task
-    #     manager and, if the taskgroup is created, and if the taskgroup and
-    #     the owner are set to the newly created task."""
+    # Create view
+    def test_task_manager_can_access_create(self):
+        """Tests if the create view action allows authenticated task
+        manager and, if the taskgroup is created, and if the taskgroup and
+        the owner are set to the newly created task."""
 
-    #     self.client.force_authenticate(user=self.user)
-    #     self.user.profile.position.is_task_manager = True
-    #     url = reverse('task-list')
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.client.force_authenticate(user=self.user)
+        self.user.profile.position.is_task_manager = True
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format='json')
 
-    #     # Check if the task was created
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Check if the task was created
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    #     # Check if the assigned taskgroup was created
-    #     task_group_id = response.data["task_group"]
-    #     task_group = TaskGroup.objects.get(id=task_group_id)
-    #     self.assertIsNotNone(task_group)
+        # Check if the assigned taskgroup was created
+        task_group_id = response.data["task_group"]
+        task_group = TaskGroup.objects.get(id=task_group_id)
+        self.assertIsNotNone(task_group)
 
-    #     # Check if the assigned owner was created
-    #     owner_email = response.data['owner']
-    #     user = User.objects.get(email=owner_email)
-    #     owner = UserProfile.objects.get(owner=user.id)
-    #     self.assertIsNotNone(owner)
+        # Check if the assigned owner was created
+        owner_email = response.data['owner']
+        user = User.objects.get(email=owner_email)
+        owner = UserProfile.objects.get(owner=user.id)
+        self.assertIsNotNone(owner)
 
-    # def test_none_task_manager_cant_access_create(self):
-    #     """Tests if the create view action disallows none task
-    #     manager."""
+    def test_none_task_manager_cant_access_create(self):
+        """Tests if the create view action disallows none task
+        manager."""
 
-    #     self.client.force_authenticate(user=self.user)
-    #     self.user.profile.position.is_task_manager = False
-    #     url = reverse('task-list')
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.client.force_authenticate(user=self.user)
+        self.user.profile.position.is_task_manager = False
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format='json')
 
-    #     # Check if permission is denied for non task manager
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # Check if permission is denied for non task manager
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    # def test_unauthorized_task_manager_cant_access_create(self):
-    #     """Tests if the create view action disallows unauthorized task
-    #     manager."""
+    def test_unauthorized_cant_access_create(self):
+        """Tests if the create view action disallows unauthorized."""
 
-    #     self.user.profile.position.is_task_manager = True
-    #     url = reverse('task-list')
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.user.profile.position.is_task_manager = True
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format='json')
 
-    #     # Check if access is denied for unauthorized task manager
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # Check if access is denied for unauthorized task manager
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # def test_none_task_manager_cant_access_create(self):
-    #     """Tests if the create view action allows none task
-    #     manager."""
+    def test_staff_can_access_create(self):
+        """Tests if the create view action allows staff users."""
 
-    #     self.client.force_authenticate(user=self.user)
-    #     self.user.profile.position.is_task_manager = False
-    #     url = reverse('task-list')
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.client.force_authenticate(user=self.user)
+        self.user.is_staff = True
 
-    #     response = self.client.post(url, data, format='json')
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     # Check if permission is denied for non task manager
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        response = self.client.post(url, data, format='json')
 
-    # def test_staff_can_access_create(self):
-    #     """Tests if the create view action allows staff users."""
+        # Check if the task was created
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    #     self.client.force_authenticate(user=self.user)
-    #     self.user.is_staff = True
+    def test_none_staff_cant_access_create(self):
+        """Tests if the create view action diallows none staff users."""
 
-    #     url = reverse('task-list')
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.client.force_authenticate(user=self.user)
+        self.user.is_staff = False
 
-    #     response = self.client.post(url, data, format='json')
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     # Check if the task was created
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(url, data, format='json')
 
-    # def test_none_staff_cant_access_create(self):
-    #     """Tests if the create view action diallows none staff users."""
+        # Check if the permission is denied for none staff users
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    #     self.client.force_authenticate(user=self.user)
-    #     self.user.is_staff = False
+    # Update , partial update
+    def test_staff_can_access_update_and_partial_update(self):
+        """Tests if the update , partial_update view action allows staff
+        users."""
 
-    #     url = reverse('task-list')
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.user2.is_staff = True
+        self.client.force_authenticate(user=self.user2)
 
-    #     response = self.client.post(url, data, format='json')
+        url = reverse('task-detail', args=[self.task.id])
 
-    #     # Check if the permission is denied for none staff users
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # Partial update / update
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    # def test_staff_can_access_put_and_patch_and_destroy(self):
-    #     """Tests if the update , partial_update and destroy view action
-    #     allows staff users."""
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    #     self.user2.is_staff = True
-    #     self.client.force_authenticate(user=self.user2)
+        # Destroy
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    #     url = reverse('task-detail', args=[self.task.id])
+    def test_none_staff_cant_access_update_and_partial_update(self):
+        """Tests if the update , partial_update view action disallows 
+        none staff users."""
 
-    #     # Partial update / update
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        self.user2.is_staff = False
+        self.client.force_authenticate(user=self.user2)
 
-    #     response = self.client.patch(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+        url = reverse('task-detail', args=[self.task.id])
 
-    #     # Destroy
-    #     response = self.client.delete(url)
-    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # Partial update / update
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    # def test_none_staff_cant_access_put_and_patch_and_destroy(self):
-    #     """Tests if the update , partial_update and destroy view action
-    #     disallows non staff users."""
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    #     self.user2.is_staff = False
-    #     self.client.force_authenticate(user=self.user2)
+    def test_owner_can_access_update_and_partial_update(self):
+        """Tests if the update , partial_update view action allows instance
+        owner."""
 
-    #     url = reverse('task-detail', args=[self.task.id])
+        self.client.force_authenticate(user=self.user)
 
-    #     # Partial update / update
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        url = reverse('task-detail', args=[self.task.id])
 
-    #     response = self.client.patch(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     # Destroy
-    #     response = self.client.delete(url)
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # Partial update / update
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # def test_unauthenticated_user_cant_access_put_and_patch_and_destroy(self):
-    #     """Tests if the update , partial_update and destroy view action
-    #     disallows unauthenticated users."""
+    def test_none_owner_cant_access_update_and_partial_update(self):
+        """Tests if the update , partial_update and destroy view action
+        disallows instance owner."""
 
-    #     url = reverse('task-detail', args=[self.task.id])
+        self.client.force_authenticate(user=self.user2)
 
-    #     # Partial update / update
-    #     data = {
-    #         'title': 'The first Task',
-    #         'description': 'The task to be tested.',
-    #         'due_date': date(2023, 1, 15),
-    #         'category': self.category.name,
-    #         'priority': self.priority.caption,
-    #         'status': self.status.caption,
-    #     }
+        url = reverse('task-detail', args=[self.task.id])
 
-    #     response = self.client.patch(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
 
-    #     # Destroy
-    #     response = self.client.delete(url)
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    # def test_fields_are_omited_in_to_representation(self):
-    #     """Tests if the to_representation method in task serializer omits
-    #     """
+    def test_unauthenticated_user_cant_access_update_and_partial_update(self):
+        """Tests if the update , partial_update and destroy view action
+        disallows unauthenticated users."""
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
+
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Destroy
+    def test_staff_can_access_destroy(self):
+        """Tests if the destroy view action allows staff users."""
+
+        self.user2.is_staff = True
+        self.client.force_authenticate(user=self.user2)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_none_staff_cant_access_destroy(self):
+        """Tests if the destroy view action disallows none staff users."""
+
+        self.user2.is_staff = False
+        self.client.force_authenticate(user=self.user2)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_owner_can_access_destroy(self):
+        """Tests if the destroy view action allows owner."""
+
+        self.client.force_authenticate(user=self.user)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_none_owner_cant_access_destroy(self):
+        """Tests if the destroy view action disallows none owner."""
+
+        self.client.force_authenticate(user=self.user2)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
