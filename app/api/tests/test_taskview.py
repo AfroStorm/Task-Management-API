@@ -1,5 +1,6 @@
 from rest_framework.test import APITestCase
 from datetime import date
+from api.serializers import TaskSerializer
 from django.urls import reverse
 from api.models import Priority, Status, Category, Position, UserProfile, \
     Task, TaskGroup
@@ -271,7 +272,7 @@ class TestTaskVIew(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_none_staff_cant_access_update_and_partial_update(self):
-        """Tests if the update , partial_update view action disallows 
+        """Tests if the update , partial_update view action disallows
         none staff users."""
 
         self.user2.is_staff = False
@@ -393,3 +394,48 @@ class TestTaskVIew(APITestCase):
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_serializer_get_fields_method(self):
+        """Tests if the get_fields method of the taskserializer is setting
+        certain fields to read-only, depending on whether the user is staff
+        or not."""
+
+        def assert_fields_read_only(user, url, fields_to_assert):
+            """Sets up the serializer and assertion logic."""
+
+            self.client.force_authenticate(user=user)
+            response = self.client.get(url, format='json')
+            request = response.wsgi_request
+
+            serializer = TaskSerializer(
+                instance=self.task,
+                context={'request': request}
+            )
+
+            fields = serializer.fields
+
+            for field in fields_to_assert:
+                self.assertEqual(fields[field].read_only,
+                                 fields_to_assert[field])
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        # Staff users have all fields unchanged
+        self.user.is_staff = True
+        assert_fields_read_only(
+            self.user,
+            url,
+            fields_to_assert={'id': True}
+        )
+
+        # Authenticated users have owner and task_group field read-only true
+        self.user.is_staff = False
+        assert_fields_read_only(
+            self.user,
+            url,
+            fields_to_assert={
+                'id': True,
+                'owner': True,
+                'task_group': True
+            }
+        )

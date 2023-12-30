@@ -73,5 +73,8 @@ tasks.
 can have multi disciplinary qualifications.
 - Add functionality of task group preffered positions field
 
+- IMPORTANT: check why fields are displayed for unatuhenticated users in task
+view get method.
+
 - continue the tests for task view
 write tests for serializer functionality (to_representation / get_fields)
