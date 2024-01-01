@@ -189,11 +189,6 @@ class TaskSerializer(serializers.ModelSerializer):
         if request.user.is_staff:
             return fields
 
-        # Unatuhenticated users all fields will be read only
-        # elif not hasattr(request.user, 'profile'):
-        #     for field in fields:
-        #         fields[field].read_only = True
-
         # Check if self.instance is a queryset
         elif isinstance(self.instance, QuerySet):
             for obj in self.instance:

@@ -67,14 +67,12 @@ This project provides a good balance of CRUD operations, user authentication, an
 task managers or admin.
 - limit the pool of employees the task manager can chose from by the category
 of the task.
-- related category field of the position limits the employee to certain
-tasks.
 - make related category field a many to many relationship so a position
 can have multi disciplinary qualifications.
-- Add functionality of task group preffered positions field
-
+- Add functionality of task group sought after positions field
 - IMPORTANT: check why fields are displayed for unatuhenticated users in task
 view get method.
 
 - continue the tests for task view
 write tests for serializer functionality (to_representation / get_fields)
+check the perform create method seperately if possible (under create view).
