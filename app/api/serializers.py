@@ -108,7 +108,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class TaskGroupSerializer(serializers.ModelSerializer):
     """Serializes the TaskGroup model."""
 
-    required_positions = serializers.SlugRelatedField(
+    suggested_positions = serializers.SlugRelatedField(
         queryset=Position.objects.all(),
         many=True,
         slug_field='title'
@@ -121,7 +121,7 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskGroup
-        fields = ['id', 'name', 'required_positions',
+        fields = ['id', 'name', 'suggested_positions',
                   'team_members', 'assigned_task']
 
     def get_fields(self):

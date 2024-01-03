@@ -46,6 +46,6 @@ def create_task_group(sender, instance, created, **kwargs):
                 related_category=instance.category
             ).distinct().order_by('title')[:5]
 
-            task_group.sought_after_positions.add(*positions)
+            task_group.suggested_positions.add(*positions)
 
         instance.save()

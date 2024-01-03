@@ -73,6 +73,6 @@ can have multi disciplinary qualifications.
 - IMPORTANT: check why fields are displayed for unatuhenticated users in task
 view get method.
 
-- continue the tests for task view
-write tests for serializer functionality (to_representation / get_fields)
-check the perform create method seperately if possible (under create view).
+- write ttests for taskgroup
+make sure to test for both scenarios , authenticated owner and non
+authenticated owner etc.

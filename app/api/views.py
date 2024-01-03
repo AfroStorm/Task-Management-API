@@ -161,7 +161,7 @@ class TaskGroupView(ModelViewSet):
             permission_classes = [IsAuthenticated]
 
         # Only admin can manually create/destroy a taskgroup
-        elif self.action == 'create' and \
+        elif self.action == 'create' or \
                 self.action == 'destroy':
             permission_classes = [IsAdminUser]
 

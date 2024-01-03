@@ -9,11 +9,12 @@ from rest_framework import status
 from django.db.models.signals import post_save
 from api.signals import create_task_group
 
+
 User = get_user_model()
 
 
-class TestTaskVIew(APITestCase):
-    """Tests the permissions of the task view."""
+class TestTaskModel(APITestCase):
+    """Tests that are related to the task model."""
 
     def setUp(self) -> None:
         # Disconnect the signal during the test setup
@@ -98,14 +99,14 @@ class TestTaskVIew(APITestCase):
         self.task_group = TaskGroup.objects.create(
             name='The first TaskGroup'
         )
-        self.task_group.sought_after_positions.set([self.position])
+        self.task_group.suggested_positions.set([self.position])
         self.task_group.team_members.set([self.userprofile])
 
         # Craeting a taskgroup instance 3
         self.task_group3 = TaskGroup.objects.create(
             name='The second TaskGroup'
         )
-        self.task_group3.sought_after_positions.set([self.position])
+        self.task_group3.suggested_positions.set([self.position])
         self.task_group3.team_members.set([self.userprofile3])
 
         # Creating a task instance and assigning it to user
@@ -139,14 +140,16 @@ class TestTaskVIew(APITestCase):
         """Tests if the list view action allows authenticated users."""
 
         self.client.force_authenticate(user=self.user)
-        response = self.client.get('http://localhost:8000/api/tasks/')
+        url = reverse('task-list')
+        response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_list(self):
         """Tests if the list view action disallows unauthenticated users."""
 
-        response = self.client.get('http://localhost:8000/api/tasks/')
+        url = reverse('task-list')
+        response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -215,8 +218,8 @@ class TestTaskVIew(APITestCase):
         # Check if permission is denied for non task manager
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_unauthorized_cant_access_create(self):
-        """Tests if the create view action disallows unauthorized."""
+    def test_unauthenticated_cant_access_create(self):
+        """Tests if the create view action disallows unauthenticated."""
 
         self.user.profile.position.is_task_manager = True
         url = reverse('task-list')
@@ -231,7 +234,7 @@ class TestTaskVIew(APITestCase):
 
         response = self.client.post(url, data, format='json')
 
-        # Check if access is denied for unauthorized task manager
+        # Check if access is denied for unauthenticated task manager
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_staff_can_access_create(self):
@@ -302,9 +305,9 @@ class TestTaskVIew(APITestCase):
         profile = UserProfile.objects.get(email=owner_email)
         self.assertEqual(profile, self.userprofile2)
 
-    # Update , partial update view
-    def test_staff_can_access_update_and_partial_update(self):
-        """Tests if the update , partial_update view action allows staff
+    # Update view
+    def test_staff_can_access_update(self):
+        """Tests if the update view action allows staff
         users."""
 
         self.user2.is_staff = True
@@ -321,12 +324,11 @@ class TestTaskVIew(APITestCase):
             'status': self.status.caption,
         }
 
-        response = self.client.patch(url, data, format='json')
+        response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_staff_cant_access_update_and_partial_update(self):
-        """Tests if the update , partial_update view action disallows
-        non staff users."""
+    def test_non_staff_cant_access_update(self):
+        """Tests if the update view action disallows non staff users."""
 
         self.user2.is_staff = False
         self.client.force_authenticate(user=self.user2)
@@ -342,12 +344,11 @@ class TestTaskVIew(APITestCase):
             'status': self.status.caption,
         }
 
-        response = self.client.patch(url, data, format='json')
+        response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_owner_can_access_update_and_partial_update(self):
-        """Tests if the update , partial_update view action allows instance
-        owner."""
+    def test_owner_can_access_update(self):
+        """Tests if the update view action allows owner."""
 
         self.client.force_authenticate(user=self.user)
 
@@ -362,12 +363,11 @@ class TestTaskVIew(APITestCase):
             'status': self.status.caption,
         }
 
-        response = self.client.patch(url, data, format='json')
+        response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_owner_cant_access_update_and_partial_update(self):
-        """Tests if the update , partial_update and destroy view action
-        disallows instance owner."""
+    def test_non_owner_cant_access_update(self):
+        """Tests if the update view action disallows non owner."""
 
         self.client.force_authenticate(user=self.user2)
 
@@ -382,12 +382,12 @@ class TestTaskVIew(APITestCase):
             'status': self.status.caption,
         }
 
-        response = self.client.patch(url, data, format='json')
+        response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_unauthenticated_user_cant_access_update_and_partial_update(self):
-        """Tests if the update , partial_update and destroy view action
-        disallows unauthenticated users."""
+    def test_unauthenticated_user_cant_access_update(self):
+        """Tests if the update view action disallows unauthenticated
+        users."""
 
         url = reverse('task-detail', args=[self.task.id])
 
@@ -398,6 +398,95 @@ class TestTaskVIew(APITestCase):
             'category': self.category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
+        }
+
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Parttial update view
+    def test_staff_can_access_update(self):
+        """Tests if the partial update view action allows staff
+        users."""
+
+        self.user2.is_staff = True
+        self.client.force_authenticate(user=self.user2)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        data = {
+            'title': 'Partially updated task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+        }
+
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_non_staff_cant_access_partial_update(self):
+        """Tests if the partial update view action disallows non staff
+        users."""
+
+        self.user2.is_staff = False
+        self.client.force_authenticate(user=self.user2)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+        }
+
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_owner_can_access_partial_update(self):
+        """Tests if the update view action allows owner."""
+
+        self.client.force_authenticate(user=self.user)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+        }
+
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_non_owner_cant_access_partial_update(self):
+        """Tests if the partial update view action disallows non owner."""
+
+        self.client.force_authenticate(user=self.user2)
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+        }
+
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_user_cant_access_partial_update(self):
+        """Tests if the partial_update view action disallows unauthenticated
+        users."""
+
+        url = reverse('task-detail', args=[self.task.id])
+
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
         }
 
         response = self.client.patch(url, data, format='json')

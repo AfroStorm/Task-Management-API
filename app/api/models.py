@@ -124,7 +124,7 @@ class TaskGroup(models.Model):
     """Team of employees with different positions that take on a task."""
 
     name = models.CharField(max_length=100)
-    sought_after_positions = models.ManyToManyField(Position)
+    suggested_positions = models.ManyToManyField(Position)
     team_members = models.ManyToManyField(
         UserProfile,
         related_name='task_groups'
@@ -132,8 +132,7 @@ class TaskGroup(models.Model):
 
     def calculate_members(self):
         """Calculates and returns the current number of team members for the
-            task group.
-            """
+        task group."""
 
         return self.team_members.count()
 
