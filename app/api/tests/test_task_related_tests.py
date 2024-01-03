@@ -194,8 +194,8 @@ class TestTaskVIew(APITestCase):
         # Check if the task was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_none_task_manager_cant_access_create(self):
-        """Tests if the create view action disallows none task
+    def test_non_task_manager_cant_access_create(self):
+        """Tests if the create view action disallows non task
         manager."""
 
         self.client.force_authenticate(user=self.user)
@@ -255,8 +255,8 @@ class TestTaskVIew(APITestCase):
         # Check if the task was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_none_staff_cant_access_create(self):
-        """Tests if the create view action diallows none staff users."""
+    def test_non_staff_cant_access_create(self):
+        """Tests if the create view action diallows non staff users."""
 
         self.client.force_authenticate(user=self.user)
         self.user.is_staff = False
@@ -273,7 +273,7 @@ class TestTaskVIew(APITestCase):
 
         response = self.client.post(url, data, format='json')
 
-        # Check if the permission is denied for none staff users
+        # Check if the permission is denied for non staff users
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_owner_gets_assigned_to_task(self):
@@ -324,9 +324,9 @@ class TestTaskVIew(APITestCase):
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_none_staff_cant_access_update_and_partial_update(self):
+    def test_non_staff_cant_access_update_and_partial_update(self):
         """Tests if the update , partial_update view action disallows
-        none staff users."""
+        non staff users."""
 
         self.user2.is_staff = False
         self.client.force_authenticate(user=self.user2)
@@ -365,7 +365,7 @@ class TestTaskVIew(APITestCase):
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_none_owner_cant_access_update_and_partial_update(self):
+    def test_non_owner_cant_access_update_and_partial_update(self):
         """Tests if the update , partial_update and destroy view action
         disallows instance owner."""
 
@@ -415,8 +415,8 @@ class TestTaskVIew(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_none_staff_cant_access_destroy(self):
-        """Tests if the destroy view action disallows none staff users."""
+    def test_non_staff_cant_access_destroy(self):
+        """Tests if the destroy view action disallows non staff users."""
 
         self.user2.is_staff = False
         self.client.force_authenticate(user=self.user2)
@@ -436,8 +436,8 @@ class TestTaskVIew(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_none_owner_cant_access_destroy(self):
-        """Tests if the destroy view action disallows none owner."""
+    def test_non_owner_cant_access_destroy(self):
+        """Tests if the destroy view action disallows non owner."""
 
         self.client.force_authenticate(user=self.user2)
 
