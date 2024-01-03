@@ -132,6 +132,8 @@ class TestTaskVIew(APITestCase):
             task_group=self.task_group3
         )
 
+        # List view
+
     # List view
     def test_authenticated_user_can_access_list(self):
         """Tests if the list view action allows authenticated users."""
@@ -273,37 +275,6 @@ class TestTaskVIew(APITestCase):
 
         # Check if the permission is denied for none staff users
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_task_group_gets_created_and_assigned(self):
-        """Tests if the taskgroup is created and assigned by the signal
-        handler."""
-
-        # Connect the signal for the current test method
-        post_save.connect(create_task_group, sender=Task)
-
-        self.client.force_authenticate(user=self.user2)
-        self.user.profile.position.is_task_manager = True
-        url = reverse('task-list')
-        data = {
-            'title': 'The first Task',
-            'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
-            'category': self.category.name,
-            'priority': self.priority.caption,
-            'status': self.status.caption,
-        }
-
-        response = self.client.post(url, data, format='json')
-
-        # Checks if a taskgroup was created by the signal handler
-        task_group_id = response.data["task_group"]
-        task_group = TaskGroup.objects.get(id=task_group_id)
-        self.assertIsNotNone(task_group)
-
-        # Checks if the taskgroup got assigned to the task by the signal handler
-        task_id = response.data['id']
-        task = Task.objects.get(id=task_id)
-        self.assertEqual(task.task_group.id, task_group.id)
 
     def test_owner_gets_assigned_to_task(self):
         """Tests if the task view sets the request user profile to the newly
@@ -476,7 +447,7 @@ class TestTaskVIew(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     # Serializer tests
-    def test_serializer_get_fields_method(self):
+    def test_sets_fields_to_read_only(self):
         """Tests if the get_fields method of the taskserializer is setting
         certain fields to read-only, depending on whether the user is staff
         or not."""
@@ -521,9 +492,9 @@ class TestTaskVIew(APITestCase):
             }
         )
 
-    def test_staff_get_full_access(self):
+    def test_staff_gets_unrestricted_representation(self):
         """Tests if the to_representation method of the taskserializer is
-        preventing granting full access to each task."""
+        granting full representation to each task."""
 
         # Staff users can see every instance
         self.user.is_staff = True
@@ -567,12 +538,11 @@ class TestTaskVIew(APITestCase):
 
         self.assertEqual(representation_data, expected_data)
 
-    def test_non_task_members_get_restricted_access(self):
+    def test_non_task_members_gets_restricted_representation(self):
         """Tests if the to_representation method of the taskserializer is
         preventing users from viewing tasks in which they are not a team
         member."""
 
-        # Users cant see tasks in which they are no team member
         self.client.force_authenticate(user=self.user3)
 
         url = reverse('task-list')
@@ -588,17 +558,97 @@ class TestTaskVIew(APITestCase):
         )
 
         representation_data = serializer.data
-        expected_data = [None,
-                         {
-                             'id': self.task3.id,
-                             'title': self.task3.title,
-                             'description': self.task3.description,
-                             'due_date': str(self.task3.due_date),
-                             'category': self.category.name,
-                             'priority': self.priority.caption,
-                             'status': self.status.caption,
-                             'owner': str(self.userprofile3.email),
-                             'task_group': self.task_group3.id,
-                         }]
+        expected_data = [
+            None,
+            {
+                'id': self.task3.id,
+                'title': self.task3.title,
+                'description': self.task3.description,
+                'due_date': str(self.task3.due_date),
+                'category': self.category.name,
+                'priority': self.priority.caption,
+                'status': self.status.caption,
+                'owner': str(self.userprofile3.email),
+                'task_group': self.task_group3.id,
+            }]
 
+        # Checks if users cant see tasks in which they are no team member
         self.assertEqual(representation_data, expected_data)
+
+    def test_slug_related_fields_working(self):
+        """Tests if the task serializer is correctly setting certain fields
+        to a slug field."""
+
+        self.client.force_authenticate(user=self.user)
+        url = reverse('task-list')
+        response = self.client.get(url, format='json')
+        request = response.wsgi_request
+
+        serializer = TaskSerializer(
+            instance=self.task,
+            context={'request': request}
+        )
+
+        representation_data = serializer.data
+
+        expected_data = {
+            'owner': 'peterpahn@gmail.com',
+            'category': 'Human Resource Management',
+            'priority': 'High Priority',
+            'status': 'In Progress'
+        }
+
+        # Checks if the slugfields are occupied with the correct values
+        for key in expected_data:
+            self.assertEqual(representation_data[key], expected_data[key])
+
+    def test_not_required_fields_working(self):
+        """Tests if the serializer correctly sets certain fields to not
+        required."""
+
+        self.client.force_authenticate(user=self.user)
+        url = reverse('task-list')
+        response = self.client.get(url, format='json')
+        request = response.wsgi_request
+
+        serializer = TaskSerializer(
+            instance=self.task,
+            context={'request': request}
+        )
+
+        fields = serializer.get_fields()
+
+        # Checks if the task group field is set to required false
+        self.assertFalse(fields['task_group'].required)
+
+    # Signal handler tests
+    def test_task_group_gets_created_and_assigned(self):
+        """Tests if the taskgroup is created and assigned by the signal
+        handler."""
+
+        # Connect the signal for the current test method
+        post_save.connect(create_task_group, sender=Task)
+
+        self.client.force_authenticate(user=self.user2)
+        self.user.profile.position.is_task_manager = True
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        # Checks if a taskgroup was created by the signal handler
+        task_group_id = response.data["task_group"]
+        task_group = TaskGroup.objects.get(id=task_group_id)
+        self.assertIsNotNone(task_group)
+
+        # Checks if the taskgroup got assigned to the task by the signal handler
+        task_id = response.data['id']
+        task = Task.objects.get(id=task_id)
+        self.assertEqual(task.task_group.id, task_group.id)
