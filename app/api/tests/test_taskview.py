@@ -30,6 +30,12 @@ class TestTaskVIew(APITestCase):
             password='blabla123.'
         )
 
+        # Creating user instance 3
+        self.user3 = User.objects.create(
+            email='captaincook@gmail.com',
+            password='blabla123.'
+        )
+
         # Priority instance
         caption = 'High Priority'
         self.priority = Priority.objects.create(caption=caption)
@@ -78,12 +84,29 @@ class TestTaskVIew(APITestCase):
             position=self.position
         )
 
+        # Creating userprofile instance 3
+        self.userprofile3 = UserProfile.objects.create(
+            owner=self.user3,
+            first_name='Captain',
+            last_name='Cook',
+            phone_number=int('0176577922'),
+            email=self.user3.email,
+            position=self.position
+        )
+
         # Craeting a taskgroup instance
         self.task_group = TaskGroup.objects.create(
             name='The first TaskGroup'
         )
         self.task_group.sought_after_positions.set([self.position])
         self.task_group.team_members.set([self.userprofile])
+
+        # Craeting a taskgroup instance 3
+        self.task_group3 = TaskGroup.objects.create(
+            name='The second TaskGroup'
+        )
+        self.task_group3.sought_after_positions.set([self.position])
+        self.task_group3.team_members.set([self.userprofile3])
 
         # Creating a task instance and assigning it to user
         self.task = Task.objects.create(
@@ -95,6 +118,18 @@ class TestTaskVIew(APITestCase):
             status=self.status,
             owner=self.userprofile,
             task_group=self.task_group
+        )
+
+        # Creating a task instance and assigning it to user3
+        self.task3 = Task.objects.create(
+            title='The second Task',
+            description='The second task to be tested.',
+            due_date=date(2023, 1, 16),
+            category=self.category,
+            priority=self.priority,
+            status=self.status,
+            owner=self.userprofile3,
+            task_group=self.task_group3
         )
 
     # List view
@@ -135,8 +170,7 @@ class TestTaskVIew(APITestCase):
     # Create view
     def test_task_manager_can_access_create(self):
         """Tests if the create view action allows authenticated task
-        manager and, if the taskgroup is created, and if the taskgroup and
-        the owner are set to the newly created task."""
+        manager."""
 
         # Connect the signal for the current test method
         post_save.connect(create_task_group, sender=Task)
@@ -157,15 +191,6 @@ class TestTaskVIew(APITestCase):
 
         # Check if the task was created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        # Checks if the view assigns the request.user.profile to the task owner
-        received_email = response.data['owner']
-        self.assertEqual(received_email, self.userprofile2.email)
-
-        # Check if a taskgroup was created and assigned by the signal handler
-        received_id = response.data["task_group"]
-        task_group = TaskGroup.objects.get(id=received_id)
-        self.assertIsNotNone(task_group)
 
     def test_none_task_manager_cant_access_create(self):
         """Tests if the create view action disallows none task
@@ -248,6 +273,63 @@ class TestTaskVIew(APITestCase):
 
         # Check if the permission is denied for none staff users
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_task_group_gets_created_and_assigned(self):
+        """Tests if the taskgroup is created and assigned by the signal
+        handler."""
+
+        # Connect the signal for the current test method
+        post_save.connect(create_task_group, sender=Task)
+
+        self.client.force_authenticate(user=self.user2)
+        self.user.profile.position.is_task_manager = True
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        # Checks if a taskgroup was created by the signal handler
+        task_group_id = response.data["task_group"]
+        task_group = TaskGroup.objects.get(id=task_group_id)
+        self.assertIsNotNone(task_group)
+
+        # Checks if the taskgroup got assigned to the task by the signal handler
+        task_id = response.data['id']
+        task = Task.objects.get(id=task_id)
+        self.assertEqual(task.task_group.id, task_group.id)
+
+    def test_owner_gets_assigned_to_task(self):
+        """Tests if the task view sets the request user profile to the newly
+        created task as owner."""
+
+        # Connect the signal for the current test method
+        post_save.connect(create_task_group, sender=Task)
+
+        self.client.force_authenticate(user=self.user2)
+        self.user.profile.position.is_task_manager = True
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        # Checks if the view assigns the request.user.profile to the task as owner
+        owner_email = response.data['owner']
+        profile = UserProfile.objects.get(email=owner_email)
+        self.assertEqual(profile, self.userprofile2)
 
     # Update , partial update view
     def test_staff_can_access_update_and_partial_update(self):
@@ -439,10 +521,9 @@ class TestTaskVIew(APITestCase):
             }
         )
 
-    def test_serializer_to_representation_method(self):
+    def test_staff_get_full_access(self):
         """Tests if the to_representation method of the taskserializer is
-        preventing non-staff users from viewing tasks in which they are not
-        included."""
+        preventing granting full access to each task."""
 
         # Staff users can see every instance
         self.user.is_staff = True
@@ -452,18 +533,16 @@ class TestTaskVIew(APITestCase):
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
+        queryset = Task.objects.all()
+
         serializer = TaskSerializer(
-            instance=self.task,
+            instance=queryset,
+            many=True,
             context={'request': request}
         )
 
-        representation_data = serializer.to_representation(
-            instance=self.task
-        )
-
-        print(representation_data)
-
-        self.assertEqual(dict(representation_data), {
+        representation_data = serializer.data
+        expected_data = [{
             'id': self.task.id,
             'title': self.task.title,
             'description': self.task.description,
@@ -473,4 +552,53 @@ class TestTaskVIew(APITestCase):
             'status': self.status.caption,
             'owner': str(self.userprofile.email),
             'task_group': self.task_group.id,
-        })
+        },
+            {
+            'id': self.task3.id,
+            'title': self.task3.title,
+            'description': self.task3.description,
+            'due_date': str(self.task3.due_date),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+            'owner': str(self.userprofile3.email),
+            'task_group': self.task_group3.id,
+        }]
+
+        self.assertEqual(representation_data, expected_data)
+
+    def test_non_task_members_get_restricted_access(self):
+        """Tests if the to_representation method of the taskserializer is
+        preventing users from viewing tasks in which they are not a team
+        member."""
+
+        # Users cant see tasks in which they are no team member
+        self.client.force_authenticate(user=self.user3)
+
+        url = reverse('task-list')
+        response = self.client.get(url, format='json')
+        request = response.wsgi_request
+
+        queryset = Task.objects.all()
+
+        serializer = TaskSerializer(
+            instance=queryset,
+            many=True,
+            context={'request': request}
+        )
+
+        representation_data = serializer.data
+        expected_data = [None,
+                         {
+                             'id': self.task3.id,
+                             'title': self.task3.title,
+                             'description': self.task3.description,
+                             'due_date': str(self.task3.due_date),
+                             'category': self.category.name,
+                             'priority': self.priority.caption,
+                             'status': self.status.caption,
+                             'owner': str(self.userprofile3.email),
+                             'task_group': self.task_group3.id,
+                         }]
+
+        self.assertEqual(representation_data, expected_data)

@@ -190,7 +190,7 @@ class TaskView(ModelViewSet):
             permission_classes = [IsAuthenticated]
 
         # Only admin or authenticated user with a position that has
-            # is_task_manager true can create
+        # is_task_manager true can create
         elif self.action == 'create':
             permission_classes = [IsAdminUser | IsTaskManager]
 
@@ -206,8 +206,8 @@ class TaskView(ModelViewSet):
 
     def perform_create(self, serializer):
         """Assigns the user's profile to the Task as owner."""
-        owner = self.request.user.profile
-        serializer.validated_data['owner'] = owner
+
+        serializer.validated_data['owner'] = self.request.user.profile
         return super().perform_create(serializer)
 
 
