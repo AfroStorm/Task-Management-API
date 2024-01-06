@@ -40,7 +40,7 @@ def create_task_group(sender, instance, created, **kwargs):
         # Adds the task owner to the team member field
         task_group.team_members.add(instance.owner)
 
-        # Adds sample positions to the required positions field
+        # Adds sample positions to the suggested_positions field
         if instance.category:
             positions = Position.objects.filter(
                 related_category=instance.category

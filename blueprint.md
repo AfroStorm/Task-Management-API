@@ -69,10 +69,9 @@ task managers or admin.
 of the task.
 - make related category field a many to many relationship so a position
 can have multi disciplinary qualifications.
-- Add functionality of task group sought after positions field
+- Add functionality of task group sought suggested positions field
 - IMPORTANT: check why fields are displayed for unatuhenticated users in task
 view get method.
 
-- write ttests for taskgroup
-make sure to test for both scenarios , authenticated owner and non
-authenticated owner etc.
+- Refactor/ brush up both test files
+

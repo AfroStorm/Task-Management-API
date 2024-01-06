@@ -125,28 +125,50 @@ class TaskGroupSerializer(serializers.ModelSerializer):
                   'team_members', 'assigned_task']
 
     def get_fields(self):
-        """Prevents unauthorized users from modifying certain fields."""
-        request = self.context['request']
+        """Prevents non-staff users and non-owners from modifying certain fields."""
+
+        request = self.context.get('request')
         fields = super().get_fields()
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
             return fields
 
-        elif request.method not in permissions.SAFE_METHODS:
-            if request.user.is_authenticated:
-                fields['assigned_task'].read_only = True
+        # Checks if self.instance is a query set
+        elif isinstance(self.instance, QuerySet):
+            # Checks if the request user profile is the owner of the assigned task of the task group
+            for obj in self.instance:
+                if hasattr(obj.assigned_task, 'owner') and \
+                        request.user.profile == obj.assigned_task.owner:
+                    fields['assigned_task'].read_only = True
 
-                return fields
+                    return fields
 
-            # Unatuhenticated users all fields will be read only
-            else:
-                read_only_fields = fields
-                for field in read_only_fields:
-                    fields[field].read_only = True
+        # Checks if its a single instance
+        elif hasattr(self.instance.assigned_task, 'owner') and \
+                request.user.profile == self.instance.assigned_task.owner:
+            fields['assigned_task'].read_only = True
 
-                return fields
+            return fields
 
-        return fields
+        return {}
+
+    def to_representation(self, instance):
+        """Prevents non-staff users from viewing tasks in which they are not
+        included."""
+
+        request = self.context['request']
+        data = super().to_representation(instance)
+
+        if request.user.is_staff:
+            return data
+
+        # If the UserProfile is not a member of the task group.
+        elif request.user.profile not in \
+                instance.team_members.all():
+
+            return {}
+
+        return data
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -192,13 +214,15 @@ class TaskSerializer(serializers.ModelSerializer):
         # Check if self.instance is a queryset
         elif isinstance(self.instance, QuerySet):
             for obj in self.instance:
-                if hasattr(obj, 'owner') and request.user.profile == obj.owner:
+                if hasattr(obj, 'owner') and \
+                        request.user.profile == obj.owner:
                     fields['task_group'].read_only = True
                     fields['owner'].read_only = True
                     break
 
         # Check if self.instance is a single instance
-        elif hasattr(self.instance, 'owner') and request.user.profile == self.instance.owner:
+        elif hasattr(self.instance, 'owner') and \
+                request.user.profile == self.instance.owner:
             fields['task_group'].read_only = True
             fields['owner'].read_only = True
 
@@ -217,6 +241,7 @@ class TaskSerializer(serializers.ModelSerializer):
         # If the UserProfile is not a member of the Task's TaskGroup.
         elif request.user.profile not in \
                 instance.task_group.team_members.all():
-            return None
+
+            return {}
 
         return data
