@@ -173,6 +173,7 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     """Serializes the Task model."""
+
     owner = serializers.SlugRelatedField(
         queryset=UserProfile.objects.all(),
         slug_field='email',
@@ -202,46 +203,38 @@ class TaskSerializer(serializers.ModelSerializer):
         }
 
     def get_fields(self):
-        """Prevents unauthorized users from modifying certain fields."""
-        request = self.context['request']
+        """Sets certain fields to read_only for non staff users."""
+
+        request = self.context.get('request')
         fields = super().get_fields()
-        # Debugging line
-        print(f"Type of self.instance: {type(self.instance)}")
 
-        if request.user.is_staff:
-            return fields
+        # Staff users have no restrictions
+        if hasattr(request, 'user'):
+            if request.user.is_staff:
+                return fields
 
-        # Check if self.instance is a queryset
-        elif isinstance(self.instance, QuerySet):
-            for obj in self.instance:
-                if hasattr(obj, 'owner') and \
-                        request.user.profile == obj.owner:
-                    fields['task_group'].read_only = True
-                    fields['owner'].read_only = True
-                    break
+            else:
+                fields['task_group'].read_only = True
+                fields['owner'].read_only = True
 
-        # Check if self.instance is a single instance
-        elif hasattr(self.instance, 'owner') and \
-                request.user.profile == self.instance.owner:
-            fields['task_group'].read_only = True
-            fields['owner'].read_only = True
+                return fields
 
-        return fields
+        return {}
 
     def to_representation(self, instance):
-        """Prevents non-staff users from viewing tasks in which they are not
-        included."""
+        """Restricts users from seeing tasks win which they are not a team
+        member in except for staff users.."""
 
-        request = self.context['request']
+        request = self.context.get('request')
         data = super().to_representation(instance)
 
         if request.user.is_staff:
             return data
 
-        # If the UserProfile is not a member of the Task's TaskGroup.
-        elif request.user.profile not in \
-                instance.task_group.team_members.all():
+        elif hasattr(instance.task_group, 'team_members'):
+            if request.user.profile in \
+                    instance.task_group.team_members.all():
 
-            return {}
+                return data
 
-        return data
+        return {}

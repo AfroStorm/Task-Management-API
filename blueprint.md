@@ -65,13 +65,8 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - Adding employees to a taskgroup should only be allowed to authorized 
 task managers or admin.
-- limit the pool of employees the task manager can chose from by the category
-of the task.
 - make related category field a many to many relationship so a position
 can have multi disciplinary qualifications.
-- Add functionality of task group sought suggested positions field
-- IMPORTANT: check why fields are displayed for unatuhenticated users in task
-view get method.
-
+- Add functionality of task group suggested positions field
 - Refactor/ brush up both test files
-
+- Continue fixing the serializers by using the type one-off instance creation

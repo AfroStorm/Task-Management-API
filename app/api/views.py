@@ -1,8 +1,6 @@
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
-from api.serializers import TaskSerializer, PrioritySerializer, \
-    StatusSerializer, CategorySerializer, PositionSerializer, \
-    TaskGroupSerializer, UserProfileSerializer
+from api import serializers
 from api.models import Task, Priority, Status, Category, Position, \
     TaskGroup, UserProfile
 from rest_framework.authentication import TokenAuthentication
@@ -17,7 +15,7 @@ class PositionView(ModelViewSet):
     """ModelViewSett for Position model with basic crud functions."""
 
     queryset = Position.objects.all()
-    serializer_class = PositionSerializer
+    serializer_class = serializers.PositionSerializer
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
@@ -43,7 +41,7 @@ class CategoryView(ModelViewSet):
     """ModelViewSett for Category model with basic crud functions."""
 
     queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    serializer_class = serializers.CategorySerializer
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
@@ -69,7 +67,7 @@ class StatusView(ModelViewSet):
     """ModelViewSett for Status model with basic crud functions."""
 
     queryset = Status.objects.all()
-    serializer_class = StatusSerializer
+    serializer_class = serializers.StatusSerializer
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
@@ -95,7 +93,7 @@ class PriorityView(ModelViewSet):
     """ModelViewSett for Task model with basic crud functions."""
 
     queryset = Priority.objects.all()
-    serializer_class = PrioritySerializer
+    serializer_class = serializers.PrioritySerializer
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
@@ -121,7 +119,7 @@ class UserProfileView(ModelViewSet):
     """ModelViewSett for UserProfile model with basic crud functions."""
 
     queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
+    serializer_class = serializers.UserProfileSerializer
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
@@ -150,7 +148,7 @@ class TaskGroupView(ModelViewSet):
     """ModelViewSett for TaskGroup model with basic crud functions."""
 
     queryset = TaskGroup.objects.all()
-    serializer_class = TaskGroupSerializer
+    serializer_class = serializers.TaskGroupSerializer
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
@@ -179,7 +177,7 @@ class TaskView(ModelViewSet):
     """ModelViewSett for Task model with basic crud functions."""
 
     queryset = Task.objects.all()
-    serializer_class = TaskSerializer
+    serializer_class = serializers.TaskSerializer
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
