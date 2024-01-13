@@ -237,4 +237,8 @@ class TaskSerializer(serializers.ModelSerializer):
 
                 return data
 
-        return {}
+            else:
+                return {}
+
+        # For newly created instances
+        return data

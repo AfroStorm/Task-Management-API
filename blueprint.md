@@ -69,4 +69,4 @@ task managers or admin.
 can have multi disciplinary qualifications.
 - Add functionality of task group suggested positions field
 - Refactor/ brush up both test files
-- Continue fixing the serializers by using the type one-off instance creation
+- Figure out how to test instances and their methods

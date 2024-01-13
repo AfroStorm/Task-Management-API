@@ -33,21 +33,20 @@ def create_task_group(sender, instance, created, **kwargs):
     """
 
     if created:
-        if not hasattr(instance, 'task_group'):
-            task_group = TaskGroup.objects.create(
-                name=f'TaskGroup of {instance.title}'
-            )
-            instance.task_group = task_group
+        task_group = TaskGroup.objects.create(
+            name=f'TaskGroup of {instance.title}'
+        )
+        instance.task_group = task_group
 
-            # Adds the task owner to the team member field
-            task_group.team_members.add(instance.owner)
+        # Adds the task owner to the team member field
+        task_group.team_members.add(instance.owner)
 
-            # Adds sample positions to the suggested_positions field
-            if instance.category:
-                positions = Position.objects.filter(
-                    related_category=instance.category
-                ).distinct().order_by('title')[:5]
+        # Adds sample positions to the suggested_positions field
+        if instance.category:
+            positions = Position.objects.filter(
+                related_category=instance.category
+            ).distinct().order_by('title')[:5]
 
-                task_group.suggested_positions.add(*positions)
+            task_group.suggested_positions.add(*positions)
 
-            instance.save()
+        instance.save()
