@@ -69,4 +69,4 @@ task managers or admin.
 can have multi disciplinary qualifications.
 - Add functionality of task group suggested positions field
 - Refactor/ brush up both test files
-- Figure out how to test instances and their methods
+- Continue writing tests for each model (views, serializers, signals)

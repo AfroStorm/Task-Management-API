@@ -719,6 +719,7 @@ class TestTaskGroupModel(APITestCase):
 
         task_id = response.data['id']
         task_group = TaskGroup.objects.get(assigned_task=task_id)
+
         positions = []
         members = []
 

@@ -76,15 +76,24 @@ class PositionSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializes the UserProfile model."""
 
+    owner = serializers.SlugRelatedField(
+        queryset=User.objects.all(),
+        slug_field='email'
+    )
+
     class Meta:
         model = UserProfile
         fields = [
             'id', 'owner', 'first_name', 'last_name', 'phone_number', 'email',
             'position', 'task_groups', 'tasks_to_manage'
         ]
+        extra_kwargs = {
+            'task_groups': {'required': False},
+            'tasks_to_manage': {'required': False},
+        }
 
     def get_fields(self):
-        """Prevents unauthorized users from modifying certain fields."""
+        """Prevents non staff users from modifying certain fields."""
 
         request = self.context['request']
         fields = super().get_fields()
@@ -92,14 +101,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if request.user.is_staff:
             return fields
 
-        elif request.user.is_authenticated:
+        else:
             read_only_fields = ['owner', 'task_groups', 'tasks_to_manage']
             for field in read_only_fields:
-                fields[field].read_only = True
-
-        # Unatuhenticated users all fields will be read only
-        else:
-            for field in fields:
                 fields[field].read_only = True
 
         return fields
