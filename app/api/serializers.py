@@ -14,7 +14,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'id'
+            'email', 'id', 'profile'
         ]
         extra_kwargs = {
             'password': {
@@ -33,12 +33,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if request.user.is_staff:
             return fields
 
-        elif request.methods not in permissions.SAFE_METHODS:
+        else:
             fields['profile'].read_only = True
 
             return fields
-
-        return fields
 
 
 class PrioritySerializer(serializers.ModelSerializer):
@@ -85,10 +83,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             'id', 'owner', 'first_name', 'last_name', 'phone_number', 'email',
-            'position', 'task_groups', 'tasks_to_manage'
+            'position', 'task_group', 'tasks_to_manage'
         ]
         extra_kwargs = {
-            'task_groups': {'required': False},
+            'task_group': {'required': False},
             'tasks_to_manage': {'required': False},
         }
 
@@ -102,7 +100,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return fields
 
         else:
-            read_only_fields = ['owner', 'task_groups', 'tasks_to_manage']
+            read_only_fields = ['owner', 'task_group', 'tasks_to_manage']
             for field in read_only_fields:
                 fields[field].read_only = True
 

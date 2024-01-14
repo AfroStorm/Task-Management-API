@@ -10,6 +10,7 @@ router.register('category', views.CategoryView)
 router.register('priority', views.PriorityView)
 router.register('status', views.StatusView)
 router.register('userprofile', views.UserProfileView)
+router.register('user', views.CustomUserView)
 
 
 urlpatterns = [

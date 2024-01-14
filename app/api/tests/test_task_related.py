@@ -549,8 +549,8 @@ class TestTaskModel(APITestCase):
 
     # Serializer tests
     def test_serializer_fields_read_only_staff_user(self):
-        """Tests if the get fields method of the taskserializer is setting
-        certain fields to read only for staff users."""
+        """Tests if the get fields method of the serializer is keeping each
+        field writable for staff users (exept id field)."""
 
         # Staff user
         self.user2.is_staff = True
@@ -568,8 +568,8 @@ class TestTaskModel(APITestCase):
         fields = serializer.fields
         fields.pop('id', None)
 
-        for field in fields:
-            self.assertFalse(fields[field].read_only)
+        for field, field_instance in fields.items():
+            self.assertFalse(field_instance.read_only)
 
     def test_serializer_fields_read_only_task_manager(self):
         """Tests if the get fields method of the taskserializer is setting
@@ -591,14 +591,13 @@ class TestTaskModel(APITestCase):
         fields = serializer.fields
         read_only_fields = ['id', 'task_group', 'owner']
 
-        # Checks the read-only fields and removes them from fields
-        for field in read_only_fields:
-            self.assertTrue(fields[field].read_only)
-            fields.pop(field, None)
-
-        # Checks if all other fields are modifiable
-        for field in fields:
-            self.assertFalse(fields[field].read_only)
+        for field, field_instance in fields.items():
+            # Checks if all fields expected to be read only true are correct
+            if field in read_only_fields:
+                self.assertTrue(field_instance.read_only)
+            # Checks if all fields expected to be read only false are correct
+            else:
+                self.assertFalse(field_instance.read_only)
 
     def test_serializer_restricted_representation_staff_user(self):
         """Tests if the to representation method of the taskserializer is
@@ -767,8 +766,8 @@ class TestTaskModel(APITestCase):
         }
 
         # Checks if the slugfields are occupied with the correct values
-        for key in expected_data:
-            self.assertEqual(data[key], expected_data[key])
+        for field in expected_data:
+            self.assertEqual(data[field], expected_data[field])
 
     def test_serializer_not_required_fields(self):
         """Tests if the serializer correctly sets certain fields to not

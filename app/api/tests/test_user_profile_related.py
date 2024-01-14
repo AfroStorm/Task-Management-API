@@ -1,10 +1,9 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from datetime import date
 from django.db.models.signals import post_save
 from rest_framework import status
-from api import views, models, signals
+from api import models, signals, serializers
 
 
 User = get_user_model()
@@ -371,3 +370,93 @@ class TestUserProfileModel(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Serializers
+    def test_serializer_fields_read_only_staff_user(self):
+        """Tests if the get fields method of the serializer is keeping each
+        field writable for staff users (exept id field)."""
+
+        self.user2.is_staff = True
+
+        url = reverse('userprofile-list')
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.get(url, format='json')
+        request = response.wsgi_request
+
+        serializer = serializers.UserProfileSerializer(
+            instance=self.userprofile,
+            context={'request': request}
+        )
+
+        fields = serializer.fields
+        fields.pop('id', None)
+
+        for field, field_instance in fields.items():
+            self.assertFalse(field_instance.read_only)
+
+    def test_serializer_fields_read_only_non_staff_user(self):
+        """Tests if the get fields method of the serializer is setting
+        certain fields to read only for non staff users."""
+
+        url = reverse('userprofile-list')
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(url, format='json')
+        request = response.wsgi_request
+
+        serializer = serializers.TaskSerializer(
+            instance=self.userprofile,
+            context={'request': request}
+        )
+
+        fields = serializer.fields
+        read_only_fields = ['id', 'owner', 'task_group', 'tasks_to_manage']
+
+        for field, field_instance in fields.items():
+            # Checks if all fields expected to be read only true are correct
+            if field in read_only_fields:
+                self.assertTrue(field_instance.read_only)
+            # Checks if all fields expected to be read only false are correct
+            else:
+                self.assertFalse(field_instance.read_only)
+
+    # Signal handler
+    def test_user_profile_gets_created_and_assigned(self):
+        """Tests if the userprofile is created and assigned by the signal
+        handler."""
+
+        post_save.connect(signals.create_or_update_profile, sender=User)
+
+        url = reverse('customuser-list')
+        data = {
+            'email': 'alibaba@gmail.com',
+            'password': 'blabla123.',
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        # Checks if instance waas created
+        profile_id = response.data['profile']
+        profile_instance = models.UserProfile.objects.get(id=profile_id)
+        self.assertIsNotNone(profile_instance)
+
+        # Checks if profile was assigned correctly
+        user_id = response.data['id']
+        user_instance = User.objects.get(id=user_id)
+        self.assertEqual(user_instance, profile_instance.owner)
+
+    def test_user_profile_email_gets_assigned(self):
+        """Tests if the userprofile email field gets assigned by the signal
+        handler."""
+
+        post_save.connect(signals.create_or_update_profile, sender=User)
+
+        url = reverse('customuser-list')
+        data = {
+            'email': 'alibaba@gmail.com',
+            'password': 'blabla123.',
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        # Checks if the profile email is the same as the user email
+        user_email = response.data['email']
+        profile_instnce = models.UserProfile.objects.get(email=user_email)
+        self.assertEqual(profile_instnce.email, user_email)

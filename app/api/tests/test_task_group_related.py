@@ -534,8 +534,8 @@ class TestTaskGroupModel(APITestCase):
         fields.pop('id', None)
 
         # Checks if all other fields are modifiable
-        for field in fields:
-            self.assertFalse(fields[field].read_only)
+        for field, field_instance in fields.items():
+            self.assertFalse(field_instance.read_only)
 
     def test_owner_fields_read_only(self):
         """Tests if the get_fields method of the taskserializer is setting
@@ -555,15 +555,14 @@ class TestTaskGroupModel(APITestCase):
         fields = serializer.fields
         read_only_fields = ['id', 'assigned_task']
 
-        # Checks if expected fields are read only and removes expected fields afterwards
-        for field in read_only_fields:
-            self.assertTrue(fields[field].read_only)
-            fields.pop(field, None)
+        for field, field_instance in fields.items():
+            # Checks if all fields expected to be read only true are correct
+            if field in read_only_fields:
+                self.assertTrue(field_instance.read_only)
 
-        # Continues with dictionary free from expected read only fields
-        # Checks if all other fields are modifiable
-        for field in fields:
-            self.assertFalse(fields[field].read_only)
+            # Checks if all fields expected to be read only false are correct
+            else:
+                self.assertFalse(field_instance.read_only)
 
     def test_staff_gets_unrestricted_representation(self):
         """Tests if the to_representation method of the taskgroupserializer is
@@ -661,8 +660,8 @@ class TestTaskGroupModel(APITestCase):
         }
 
         # Checks if the slugfields are occupied with the correct values
-        for key in expected_data:
-            self.assertEqual(representation_data[key], expected_data[key])
+        for field in expected_data:
+            self.assertEqual(representation_data[field], expected_data[field])
 
     # Signal handler tests
     def test_task_group_gets_created_and_assigned_to_task(self):

@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.contrib.auth import get_user_model
 from rest_framework.viewsets import ModelViewSet
 from api import serializers
 from api.models import Task, Priority, Status, Category, Position, \
@@ -9,6 +10,36 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from api.permissions import IsOwner, IsTaskManager
 # Create your views here.
+
+User = get_user_model()
+
+
+class CustomUserView(ModelViewSet):
+    """ModelViewSett for CustomUser model with basic crud functions."""
+
+    queryset = User.objects.all()
+    serializer_class = serializers.CustomUserSerializer
+    authentication_classes = [TokenAuthentication]
+
+    def get_permissions(self):
+        """Requires specific permissions depending on the view action and
+        the request user."""
+
+        if self.action == 'retrieve' or\
+                self.action == 'list':
+            permission_classes = [IsAuthenticated]
+
+        elif self.action == 'update' or\
+                self.action == 'partial_update':
+            permission_classes = [IsAdminUser | IsOwner]
+
+        elif self.action == 'destroy':
+            permission_classes = [IsAdminUser]
+
+        else:
+            permission_classes = []
+
+        return [permission() for permission in permission_classes]
 
 
 class PositionView(ModelViewSet):
@@ -123,8 +154,8 @@ class UserProfileView(ModelViewSet):
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
-        """Safe methods allowed to authenticated users. Update and partial
-        update allowed to owner. Admin has all rights."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -152,7 +183,8 @@ class TaskGroupView(ModelViewSet):
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
-        """Gives specific permissions depending on the view actions."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -181,7 +213,8 @@ class TaskView(ModelViewSet):
     authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
-        """Gives specific permissions depending on the view actions."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':

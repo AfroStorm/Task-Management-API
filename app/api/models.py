@@ -111,7 +111,7 @@ class UserProfile(models.Model):
     position = models.ForeignKey(
         Position,
         on_delete=models.DO_NOTHING,
-        related_name='incumbents',
+        related_name='incumbent',
         null=True,
         blank=True
     )
@@ -127,7 +127,7 @@ class TaskGroup(models.Model):
     suggested_positions = models.ManyToManyField(Position)
     team_members = models.ManyToManyField(
         UserProfile,
-        related_name='task_groups'
+        related_name='task_group'
     )
 
     def calculate_members(self):
