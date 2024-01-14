@@ -20,7 +20,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'password': {
                 'write_only': True,
                 'style': {'input_style': 'password'}
-            }
+            },
+            'profile': {'required': False}
         }
 
     def get_fields(self):

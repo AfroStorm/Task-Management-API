@@ -1,5 +1,8 @@
 from rest_framework import permissions
 from api.models import UserProfile, Task, TaskGroup
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class IsTaskManager(permissions.BasePermission):
@@ -20,8 +23,13 @@ class IsOwner(permissions.BasePermission):
         # Check if the user is authenticated
         if request.user.is_authenticated:
 
+            # Allows access to user owner
+            if isinstance(obj, User):
+                if request.user == obj:
+                    return True
+
             # Allows access to profile owner
-            if isinstance(obj, UserProfile):
+            elif isinstance(obj, UserProfile):
                 if request.user == obj.owner:
                     return True
 
