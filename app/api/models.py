@@ -86,7 +86,7 @@ class Position(models.Model):
     related_category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
-        related_name='positions',
+        related_name='position',
         blank=True,
         null=True
     )
