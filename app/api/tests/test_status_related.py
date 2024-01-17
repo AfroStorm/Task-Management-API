@@ -28,6 +28,15 @@
 #             password='blabla123.'
 #         )
 
+#         # Status instance
+#         self.in_progress_status = models.Status.objects.create(
+#             caption='Task In Progress'
+#         )
+
+#         self.concluded_status = models.Status.objects.create(
+#             caption='Task Concluded'
+#         )
+
 #         # Category instance
 #         self.human_resource_category = models.Category.objects.create(
 #             name='Human Resource Management',
@@ -43,14 +52,6 @@
 #             'financial health of the organization by analyzing '
 #             'financial statements, budgeting, forecasting, and '
 #             'providing insights for strategic decision-making.'
-
-#         )
-#         self.marketing_category = models.Category.objects.create(
-#             name='Marketing',
-#             description='Marketing category involves creating, communicating'
-#             ', delivering, and exchanging offerings that have value for '
-#             'customers. It includes activities such as market research,'
-#             'advertising, and brand management.'
 
 #         )
 
@@ -100,7 +101,7 @@
 #         """Tests if the list view action allows authenticated users."""
 
 #         self.client.force_authenticate(user=self.user)
-#         url = reverse('category-list')
+#         url = reverse('status-list')
 #         response = self.client.get(url)
 
 #         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -108,7 +109,7 @@
 #     def test_unauthenticated_user_cant_access_list(self):
 #         """Tests if the list view action disallows unauthenticated users."""
 
-#         url = reverse('category-list')
+#         url = reverse('status-list')
 #         response = self.client.get(url)
 
 #         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -118,8 +119,8 @@
 #         """Tests if the retrieve view action allows authenticated users."""
 
 #         self.client.force_authenticate(user=self.user)
-#         url = reverse('category-detail',
-#                       args=[self.human_resource_category.id])
+#         url = reverse('status-detail',
+#                       args=[self.in_progress_status.id])
 #         response = self.client.get(url)
 
 #         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -128,8 +129,8 @@
 #         """Tests if the retrieve view action disallows unauthenticated users.
 #         """
 
-#         url = reverse('category-detail',
-#                       args=[self.human_resource_category.id])
+#         url = reverse('status-detail',
+#                       args=[self.in_progress_status.id])
 #         response = self.client.get(url)
 
 #         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -141,13 +142,9 @@
 #         self.user.is_staff = True
 #         self.client.force_authenticate(user=self.user)
 
-#         url = reverse('category-list')
+#         url = reverse('status-list')
 #         data = {
-#             'name': 'Marketing',
-#             'description':
-#             'Marketing category involves creating, communicating, delivering, '
-#             'and exchanging offerings that have value for customers. It includes '
-#             'activities such as market research, advertising, and brand management.'
+#             'caption': 'Recently Opened'
 #         }
 
 #         response = self.client.post(url, data, format='json')
@@ -160,13 +157,9 @@
 
 #         self.client.force_authenticate(user=self.user)
 
-#         url = reverse('category-list')
+#         url = reverse('status-list')
 #         data = {
-#             'name': 'Marketing',
-#             'description':
-#             'Marketing category involves creating, communicating, delivering, '
-#             'and exchanging offerings that have value for customers. It includes '
-#             'activities such as market research, advertising, and brand management.'
+#             'caption': 'Recently Opened'
 #         }
 
 #         response = self.client.post(url, data, format='json')
@@ -181,13 +174,9 @@
 #         self.user2.is_staff = True
 #         self.client.force_authenticate(user=self.user2)
 
-#         url = reverse('category-detail', args=[self.financial_category.id])
+#         url = reverse('status-detail', args=[self.in_progress_status.id])
 #         data = {
-#             'name': 'Financial Analysis',
-#             'description': 'Financial Analysis category involves assessing the '
-#             'financial health of the organization by analyzing '
-#             'financial statements, budgeting, forecasting, and '
-#             'providing insights for strategic decision-making.'
+#             'caption': 'Task Concluded'
 #         }
 
 #         response = self.client.put(url, data, format='json')
@@ -198,13 +187,9 @@
 
 #         self.client.force_authenticate(user=self.user2)
 
-#         url = reverse('category-detail', args=[self.financial_category.id])
+#         url = reverse('status-detail', args=[self.in_progress_status.id])
 #         data = {
-#             'name': 'Financial Analysis',
-#             'description': 'Financial Analysis category involves assessing the '
-#             'financial health of the organization by analyzing '
-#             'financial statements, budgeting, forecasting, and '
-#             'providing insights for strategic decision-making.'
+#             'caption': 'Task Concluded'
 #         }
 
 #         response = self.client.put(url, data, format='json')
@@ -218,9 +203,9 @@
 #         self.user2.is_staff = True
 #         self.client.force_authenticate(user=self.user2)
 
-#         url = reverse('category-detail', args=[self.financial_category.id])
+#         url = reverse('status-detail', args=[self.in_progress_status.id])
 #         data = {
-#             'name': 'Financial Analysis',
+#             'caption': 'Task Concluded'
 #         }
 
 #         response = self.client.patch(url, data, format='json')
@@ -232,9 +217,9 @@
 
 #         self.client.force_authenticate(user=self.user2)
 
-#         url = reverse('category-detail', args=[self.financial_category.id])
+#         url = reverse('status-detail', args=[self.in_progress_status.id])
 #         data = {
-#             'name': 'Financial Analysis',
+#             'caption': 'Task Concluded'
 #         }
 
 #         response = self.client.patch(url, data, format='json')
@@ -247,7 +232,7 @@
 #         self.user2.is_staff = True
 #         self.client.force_authenticate(user=self.user2)
 
-#         url = reverse('category-detail', args=[self.marketing_category.id])
+#         url = reverse('status-detail', args=[self.concluded_status.id])
 
 #         response = self.client.delete(url)
 #         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -257,7 +242,7 @@
 
 #         self.client.force_authenticate(user=self.user2)
 
-#         url = reverse('category-detail', args=[self.marketing_category.id])
+#         url = reverse('status-detail', args=[self.concluded_status.id])
 
 #         response = self.client.delete(url)
 #         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
