@@ -50,7 +50,8 @@ class PositionView(ModelViewSet):
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
-        """Allows only admin-users to modify or create instances."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -76,7 +77,8 @@ class CategoryView(ModelViewSet):
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
-        """Allows only admin-users to modify or create instances."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -102,7 +104,8 @@ class StatusView(ModelViewSet):
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
-        """Allows only admin-users to modify or create instances."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -128,7 +131,8 @@ class PriorityView(ModelViewSet):
     authentication_classes = [TokenAuthentication,]
 
     def get_permissions(self):
-        """Allows only admin-users to modify or create instances."""
+        """Requires specific permissions depending on the view action and
+        the request user."""
 
         if self.action == 'list' or \
                 self.action == 'retrieve':

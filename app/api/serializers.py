@@ -14,7 +14,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'id', 'profile'
+            'email', 'id', 'profile', 'password'
         ]
         extra_kwargs = {
             'password': {
@@ -66,6 +66,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class PositionSerializer(serializers.ModelSerializer):
     """Serializes the Position model."""
+    related_category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='name'
+    )
 
     class Meta:
         model = Position
