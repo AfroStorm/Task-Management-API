@@ -9,8 +9,8 @@ from django.db.models.signals import post_save
 User = get_user_model()
 
 
-class TestStatusModel(APITestCase):
-    """Tests that are related to the Status model."""
+class TestPriorityModel(APITestCase):
+    """Tests that are related to the Priority model."""
 
     def setUp(self) -> None:
         post_save.disconnect(signals.create_or_update_profile, sender=User)
@@ -28,13 +28,13 @@ class TestStatusModel(APITestCase):
             password='blabla123.'
         )
 
-        # Status instance
-        self.in_progress_status = models.Status.objects.create(
-            caption='Task In Progress'
+        # Priority
+        self.high_priority = models.Priority.objects.create(
+            caption='High Priority'
         )
 
-        self.concluded_status = models.Status.objects.create(
-            caption='Task Concluded'
+        self.low_priority = models.Priority.objects.create(
+            caption='Low Priority'
         )
 
         # Category instance
@@ -101,7 +101,7 @@ class TestStatusModel(APITestCase):
         """Tests if the list view action allows authenticated users."""
 
         self.client.force_authenticate(user=self.user)
-        url = reverse('status-list')
+        url = reverse('priority-list')
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -109,7 +109,7 @@ class TestStatusModel(APITestCase):
     def test_unauthenticated_user_cant_access_list(self):
         """Tests if the list view action disallows unauthenticated users."""
 
-        url = reverse('status-list')
+        url = reverse('priority-list')
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -119,8 +119,7 @@ class TestStatusModel(APITestCase):
         """Tests if the retrieve view action allows authenticated users."""
 
         self.client.force_authenticate(user=self.user)
-        url = reverse('status-detail',
-                      args=[self.in_progress_status.id])
+        url = reverse('priority-detail', args=[self.high_priority.id])
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -129,8 +128,7 @@ class TestStatusModel(APITestCase):
         """Tests if the retrieve view action disallows unauthenticated users.
         """
 
-        url = reverse('status-detail',
-                      args=[self.in_progress_status.id])
+        url = reverse('priority-detail', args=[self.high_priority.id])
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -142,9 +140,9 @@ class TestStatusModel(APITestCase):
         self.user.is_staff = True
         self.client.force_authenticate(user=self.user)
 
-        url = reverse('status-list')
+        url = reverse('priority-list')
         data = {
-            'caption': 'Recently Opened'
+            'caption': 'Medium Priority'
         }
 
         response = self.client.post(url, data, format='json')
@@ -157,9 +155,9 @@ class TestStatusModel(APITestCase):
 
         self.client.force_authenticate(user=self.user)
 
-        url = reverse('status-list')
+        url = reverse('priority-list')
         data = {
-            'caption': 'Recently Opened'
+            'caption': 'Medium Priority'
         }
 
         response = self.client.post(url, data, format='json')
@@ -174,9 +172,9 @@ class TestStatusModel(APITestCase):
         self.user2.is_staff = True
         self.client.force_authenticate(user=self.user2)
 
-        url = reverse('status-detail', args=[self.in_progress_status.id])
+        url = reverse('priority-detail', args=[self.low_priority.id])
         data = {
-            'caption': 'Task Concluded'
+            'caption': 'Medium Priority'
         }
 
         response = self.client.put(url, data, format='json')
@@ -187,9 +185,9 @@ class TestStatusModel(APITestCase):
 
         self.client.force_authenticate(user=self.user2)
 
-        url = reverse('status-detail', args=[self.in_progress_status.id])
+        url = reverse('priority-detail', args=[self.low_priority.id])
         data = {
-            'caption': 'Task Concluded'
+            'caption': 'Medium Priority'
         }
 
         response = self.client.put(url, data, format='json')
@@ -203,9 +201,9 @@ class TestStatusModel(APITestCase):
         self.user2.is_staff = True
         self.client.force_authenticate(user=self.user2)
 
-        url = reverse('status-detail', args=[self.in_progress_status.id])
+        url = reverse('priority-detail', args=[self.low_priority.id])
         data = {
-            'caption': 'Task Concluded'
+            'caption': 'Medium Priority'
         }
 
         response = self.client.patch(url, data, format='json')
@@ -217,9 +215,9 @@ class TestStatusModel(APITestCase):
 
         self.client.force_authenticate(user=self.user2)
 
-        url = reverse('status-detail', args=[self.in_progress_status.id])
+        url = reverse('priority-detail', args=[self.low_priority.id])
         data = {
-            'caption': 'Task Concluded'
+            'caption': 'Medium Priority'
         }
 
         response = self.client.patch(url, data, format='json')
@@ -232,7 +230,7 @@ class TestStatusModel(APITestCase):
         self.user2.is_staff = True
         self.client.force_authenticate(user=self.user2)
 
-        url = reverse('status-detail', args=[self.concluded_status.id])
+        url = reverse('priority-detail', args=[self.low_priority.id])
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -242,7 +240,7 @@ class TestStatusModel(APITestCase):
 
         self.client.force_authenticate(user=self.user2)
 
-        url = reverse('status-detail', args=[self.concluded_status.id])
+        url = reverse('priority-detail', args=[self.low_priority.id])
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
