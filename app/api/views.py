@@ -240,9 +240,11 @@ class TaskView(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
-        """Assigns the user's profile to the Task as owner."""
+        """Assigns the user's profile to the Task as owner except if staff
+        has already submittted an owner."""
 
-        serializer.validated_data['owner'] = self.request.user.profile
+        if 'owner' not in serializer.validated_data:
+            serializer.validated_data['owner'] = self.request.user.profile
         return super().perform_create(serializer)
 
 

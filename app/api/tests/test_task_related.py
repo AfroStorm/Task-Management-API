@@ -266,7 +266,7 @@ class TestTaskModel(APITestCase):
         # Check if the permission is denied for non staff users
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_owner_gets_assigned_to_task(self):
+    def test_owner_gets_assigned_to_task_when_not_yet_set(self):
         """Tests if the task view sets the request user profile to the newly
         created task as owner."""
 
@@ -288,6 +288,30 @@ class TestTaskModel(APITestCase):
         task = Task.objects.get(id=task_id)
 
         self.assertEqual(task.owner.id, self.user2.id)
+
+    def test_owner_is_not_assigned_to_task_when_already_set(self):
+        """Tests if the task view doesnt set the request user profile to
+        the newly created task as owner when owner already exists."""
+
+        self.user2.is_staff = True
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+            'owner': self.user.email,
+        }
+
+        self.client.force_authenticate(self.user2)
+        response = self.client.post(url, data, format='json')
+
+        task_id = response.data['id']
+        task = Task.objects.get(id=task_id)
+
+        self.assertEqual(task.owner.id, self.user.id)
 
     def test_unauthenticated_cant_access_create(self):
         """Tests if the create view action disallows unauthenticated."""

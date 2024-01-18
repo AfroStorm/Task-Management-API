@@ -81,7 +81,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     owner = serializers.SlugRelatedField(
         queryset=User.objects.all(),
-        slug_field='email'
+        slug_field='email',
+        required=False
     )
 
     class Meta:

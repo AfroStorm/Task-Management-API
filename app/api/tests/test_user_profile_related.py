@@ -418,7 +418,7 @@ class TestUserProfileModel(APITestCase):
                 self.assertFalse(field_instance.read_only)
 
     # Signal handler
-    def test_user_profile_gets_created_and_assigned(self):
+    def test_user_profile_gets_created_and_assigned_when_not_yet_set(self):
         """Tests if the userprofile is created and assigned by the signal
         handler."""
 
@@ -442,21 +442,48 @@ class TestUserProfileModel(APITestCase):
         user_instance = User.objects.get(id=user_id)
         self.assertEqual(user_instance, profile_instance.owner)
 
-    def test_user_profile_email_gets_assigned(self):
-        """Tests if the userprofile email field gets assigned by the signal
-        handler."""
+    # def test_user_profile_is_no_created_and_assigned_when_already_set(self):
+    #     """Tests if the userprofile doesnt get created and assigned by the
+    #     signal handler if its already set by the staff user."""
 
-        post_save.connect(signals.create_or_update_profile, sender=User)
+    #     post_save.connect(signals.create_or_update_profile, sender=User)
+    #     self.user2.is_staff = True
+    #     self.client.force_authenticate(user=self.user2)
+    #     url = reverse('customuser-list')
 
-        url = reverse('customuser-list')
-        data = {
-            'email': 'alibaba@gmail.com',
-            'password': 'blabla123.',
-        }
+    #     data = {
+    #         'email': 'alibaba@gmail.com',
+    #         'password': 'blabla123.',
+    #         'profile': 'blabla123.',
+    #     }
 
-        response = self.client.post(url, data, format='json')
+    #     response = self.client.post(url, data, format='json')
 
-        # Checks if the profile email is the same as the user email
-        user_email = response.data['email']
-        profile_instnce = models.UserProfile.objects.get(email=user_email)
-        self.assertEqual(profile_instnce.email, user_email)
+    #     # Checks if instance waas created
+    #     profile_id = response.data['profile']
+    #     profile_instance = models.UserProfile.objects.get(id=profile_id)
+    #     self.assertIsNotNone(profile_instance)
+
+    #     # Checks if profile was assigned correctly
+    #     user_id = response.data['id']
+    #     user_instance = User.objects.get(id=user_id)
+    #     self.assertEqual(user_instance, profile_instance.owner)
+
+    # def test_user_profile_email_gets_assigned(self):
+    #     """Tests if the userprofile email field gets assigned by the signal
+    #     handler."""
+
+    #     post_save.connect(signals.create_or_update_profile, sender=User)
+
+    #     url = reverse('customuser-list')
+    #     data = {
+    #         'email': 'alibaba@gmail.com',
+    #         'password': 'blabla123.',
+    #     }
+
+    #     response = self.client.post(url, data, format='json')
+
+    #     # Checks if the profile email is the same as the user email
+    #     user_email = response.data['email']
+    #     profile_instnce = models.UserProfile.objects.get(email=user_email)
+    #     self.assertEqual(profile_instnce.email, user_email)

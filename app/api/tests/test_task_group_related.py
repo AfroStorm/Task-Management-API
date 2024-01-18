@@ -664,7 +664,7 @@ class TestTaskGroupModel(APITestCase):
             self.assertEqual(representation_data[field], expected_data[field])
 
     # Signal handler tests
-    def test_task_group_gets_created_and_assigned_to_task(self):
+    def test_task_group_gets_created_and_assigned_to_task_when_not_yet_set(self):
         """Tests if the taskgroup is created and assigned by the signal
         handler."""
 
@@ -694,6 +694,39 @@ class TestTaskGroupModel(APITestCase):
         task_id = response.data['id']
         task = Task.objects.get(id=task_id)
         self.assertEqual(task.task_group.id, task_group.id)
+
+    def test_task_group_is_not_created_and_assigned_to_task_when_already_set(self):
+        """Tests if the taskgroup is not created and assigned by the signal
+        handler when staff user already submitted one."""
+
+        # Connect the signal for the current test method
+        post_save.connect(create_task_group, sender=Task)
+
+        self.user2.is_staff = True
+
+        test_task_group = TaskGroup.objects.create(
+            name='The second TaskGroup'
+        )
+        test_task_group.suggested_positions.set([self.position])
+        test_task_group.team_members.set([self.userprofile2])
+
+        self.client.force_authenticate(user=self.user2)
+        url = reverse('task-list')
+        data = {
+            'title': 'The first Task',
+            'description': 'The task to be tested.',
+            'due_date': date(2023, 1, 15),
+            'category': self.category.name,
+            'priority': self.priority.caption,
+            'status': self.status.caption,
+            'task_group': test_task_group.id,
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        task_id = response.data['id']
+        task = Task.objects.get(id=task_id)
+        self.assertEqual(task.task_group.id, test_task_group.id)
 
     def test_suggested_positions_get_assigned_to_task_group(self):
         """Tests if the suggested positions and team members are getting

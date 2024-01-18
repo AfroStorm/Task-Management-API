@@ -13,16 +13,17 @@ def create_or_update_profile(sender, instance, created, **kwargs):
     instance.
     """
 
-    if created or not hasattr(instance, 'profile'):
+    if created:
         # If the profile doesn't exist, create it
-        profile_instance = UserProfile.objects.create(
+        profile = UserProfile.objects.create(
             owner=instance,
             email=instance.email
         )
+        profile.save
     else:
         # If the profile exists, update it
-        profile_instance.email = instance.email
-        profile_instance.save()
+        instance.profile.email = instance.email
+        instance.profile.save()
 
 
 # Task - TaskGroup creation
@@ -32,7 +33,7 @@ def create_task_group(sender, instance, created, **kwargs):
     instance.
     """
 
-    if created:
+    if created and not instance.task_group:
         task_group = TaskGroup.objects.create(
             name=f'TaskGroup of {instance.title}'
         )
