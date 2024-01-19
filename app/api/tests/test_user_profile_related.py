@@ -76,6 +76,15 @@ class TestUserProfileModel(APITestCase):
             position=self.position
         )
 
+        # Creating userprofile instance 3
+        self.userprofile3 = models.UserProfile.objects.create(
+            first_name='Frank',
+            last_name='Mueller',
+            phone_number=int('0176339934'),
+            email='test@gmail.com',
+            position=self.position
+        )
+
     # List view
     def test_authenticated_user_can_access_list(self):
         """Tests if the list view action allows authenticated users."""
@@ -442,48 +451,43 @@ class TestUserProfileModel(APITestCase):
         user_instance = User.objects.get(id=user_id)
         self.assertEqual(user_instance, profile_instance.owner)
 
-    # def test_user_profile_is_no_created_and_assigned_when_already_set(self):
-    #     """Tests if the userprofile doesnt get created and assigned by the
-    #     signal handler if its already set by the staff user."""
+    def test_user_profile_is_no_created_and_assigned_when_already_set(self):
+        """Tests if the userprofile doesnt get created and assigned by the
+        signal handler if its already set by the staff user."""
 
-    #     post_save.connect(signals.create_or_update_profile, sender=User)
-    #     self.user2.is_staff = True
-    #     self.client.force_authenticate(user=self.user2)
-    #     url = reverse('customuser-list')
+        post_save.connect(signals.create_or_update_profile, sender=User)
 
-    #     data = {
-    #         'email': 'alibaba@gmail.com',
-    #         'password': 'blabla123.',
-    #         'profile': 'blabla123.',
-    #     }
+        self.user3.is_staff = True
+        self.client.force_authenticate(user=self.user3)
+        url = reverse('customuser-list')
 
-    #     response = self.client.post(url, data, format='json')
+        data = {
+            'email': 'alibaba@gmail.com',
+            'password': 'blabla123.',
+            'profile': self.userprofile3.id,
+        }
 
-    #     # Checks if instance waas created
-    #     profile_id = response.data['profile']
-    #     profile_instance = models.UserProfile.objects.get(id=profile_id)
-    #     self.assertIsNotNone(profile_instance)
+        response = self.client.post(url, data, format='json')
 
-    #     # Checks if profile was assigned correctly
-    #     user_id = response.data['id']
-    #     user_instance = User.objects.get(id=user_id)
-    #     self.assertEqual(user_instance, profile_instance.owner)
+        # Checks if profile was assigned correctly
+        profile_id = response.data['profile']
+        self.assertEqual(profile_id, self.userprofile3.id)
 
-    # def test_user_profile_email_gets_assigned(self):
-    #     """Tests if the userprofile email field gets assigned by the signal
-    #     handler."""
+    def test_user_profile_email_gets_assigned(self):
+        """Tests if the userprofile email field gets assigned by the signal
+        handler."""
 
-    #     post_save.connect(signals.create_or_update_profile, sender=User)
+        post_save.connect(signals.create_or_update_profile, sender=User)
 
-    #     url = reverse('customuser-list')
-    #     data = {
-    #         'email': 'alibaba@gmail.com',
-    #         'password': 'blabla123.',
-    #     }
+        url = reverse('customuser-list')
+        data = {
+            'email': 'alibaba@gmail.com',
+            'password': 'blabla123.',
+        }
 
-    #     response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format='json')
 
-    #     # Checks if the profile email is the same as the user email
-    #     user_email = response.data['email']
-    #     profile_instnce = models.UserProfile.objects.get(email=user_email)
-    #     self.assertEqual(profile_instnce.email, user_email)
+        # Checks if the profile email is the same as the user email
+        user_email = response.data['email']
+        profile_instance = models.UserProfile.objects.get(email=user_email)
+        self.assertEqual(profile_instance.email, user_email)

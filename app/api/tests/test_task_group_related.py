@@ -273,7 +273,6 @@ class TestTaskGroupModel(APITestCase):
         }
 
         response = self.client.post(url, data, format='json')
-        print(response.content)
 
         # Check if the permission is denied for non staff users
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -301,7 +300,6 @@ class TestTaskGroupModel(APITestCase):
         }
 
         response = self.client.post(url, data, format='json')
-        print(response.content)
 
         # Check if the permission is denied for aunauthenticated users
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

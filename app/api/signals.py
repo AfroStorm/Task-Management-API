@@ -13,15 +13,15 @@ def create_or_update_profile(sender, instance, created, **kwargs):
     instance.
     """
 
-    if created:
-        # If the profile doesn't exist, create it
+    # If a task was created and no profile already exists
+    if created and not hasattr(instance, 'profile'):
         profile = UserProfile.objects.create(
             owner=instance,
             email=instance.email
         )
         profile.save
+    # If a task was not created and a profile already exists update it
     else:
-        # If the profile exists, update it
         instance.profile.email = instance.email
         instance.profile.save()
 

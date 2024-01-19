@@ -101,7 +101,8 @@ class UserProfile(models.Model):
     owner = models.OneToOneField(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='profile'
+        related_name='profile',
+        null=True
     )
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)

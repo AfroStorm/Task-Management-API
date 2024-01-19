@@ -63,14 +63,7 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 ## Next
 
-- Adding employees to a taskgroup should only be allowed to authorized 
-task managers or admin.
-- make related category field a many to many relationship so a position
-can have multiple categories.
-- Add functionality of task group suggested positions field
+- Implement a functionality that periodically checks all task instances due date fields.
+it should send out a notifications to the task owner when the due date comes up soon.
 
-- Continue modifying tests (check nott only for status code but do not none assertion to check DB)
 
-- Make sure that owner and task group are not assigned automatically to he task when staff creates it
-
-- Fix the signal handler error in user profile related test
