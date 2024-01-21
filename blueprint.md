@@ -62,8 +62,5 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 
 ## Next
-
-- Implement a functionality that periodically checks all task instances due date fields.
-it should send out a notifications to the task owner when the due date comes up soon.
-
-
+- Configure crontab correctly
+- Configure the email settings correctly.

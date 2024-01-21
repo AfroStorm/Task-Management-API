@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'LAbE3grTTAnbW9Is9uQLBWQ6uVkyJ80WilmWXc6oBoiiN8AM7A'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -42,8 +42,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'api',
-
+    'django_crontab',
 ]
+
+CRONJOBS = [
+    ('01 00 * * *', 'api.management.commands.notify_due_dates'),
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -88,8 +93,6 @@ DATABASES = {
         'HOST': os.environ.get('DJANGO_DB_HOST'),
     }
 }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -130,3 +133,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'your_email_host'  # Replace with your email host
+EMAIL_PORT = 587  # Replace with your email port
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@example.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'your_email_password'  # Replace with your email password

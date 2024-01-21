@@ -11,22 +11,16 @@ services:
       - 8000:8000
     depends_on:
       - postgres
-    environment:
-      - DJANGO_DB_NAME=postgresdb
-      - DJANGO_DB_USER=peterpahn
-      - DJANGO_DB_PASSWORD=blabla123.
-      - DJANGO_DB_HOST=postgres
-      - DJANGO_DB_PORT=5432
-  
+    env_file:
+      - ./env/task-management.env
+    command: sh -c "python manage.py runserver 0.0.0.0:8000"
+
   postgres:
     image: postgres
     volumes:
       - postgresdb-dev:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgresdb
-      - POSTGRES_USER=peterpahn
-      - POSTGRES_PASSWORD=blabla123.
-      - POSTGRES_PORT=5432
+    env_file:
+      - ./env/postgres.env
       
 volumes:
   postgresdb-dev:
