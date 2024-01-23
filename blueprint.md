@@ -62,9 +62,4 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 
 ## Next
-- Configure crontab correctly
-- write a test for the crontab job.
-Fix the issue with the email config not considering your email credentials.
-What is necessary for django being able to send actual emails ?
-
 - Maybe add a pdf generator 
