@@ -207,7 +207,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'status', 'owner', 'task_group'
         ]
         extra_kwargs = {
-            'task_group': {'required': False}
+            'task_group': {'required': False} 
         }
 
     def get_fields(self):
@@ -230,8 +230,8 @@ class TaskSerializer(serializers.ModelSerializer):
         return {}
 
     def to_representation(self, instance):
-        """Restricts users from seeing tasks win which they are not a team
-        member in except for staff users.."""
+        """Restricts users from seeing tasks in which they are not a team
+        member, except for staff users.."""
 
         request = self.context.get('request')
         data = super().to_representation(instance)

@@ -62,4 +62,5 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 
 ## Next
-- Maybe add a pdf generator 
+- Add a model which contains the actual work related information of the task (links to Images, documents, web sites etc).
+- Maybe add a pdf generator

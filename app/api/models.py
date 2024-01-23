@@ -186,3 +186,23 @@ class Task(models.Model):
 
     def __str__(self) -> str:
         return f'ID: {self.id} - Status: {self.status} - Title: {self.title}'
+
+
+class TaskResource(models.Model):
+    """A Resource of the task (image, document, website link)."""
+
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    resource_link = models.CharField(max_length=500)
+
+    task = models.ForeignKey(
+        Task,
+        related_name='resource_collecion',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self) -> str:
+
+        return f'Title: {self.title} ID: {self.id}'
