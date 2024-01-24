@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import UserProfile, Task, Category, Status, Priority, Position, \
-    TaskGroup
+from api import models
 from django.db.models.query import QuerySet
 
 
@@ -44,7 +43,7 @@ class PrioritySerializer(serializers.ModelSerializer):
     """Serializes the Priority model."""
 
     class Meta:
-        model = Priority
+        model = models.Priority
         fields = '__all__'
 
 
@@ -52,7 +51,7 @@ class StatusSerializer(serializers.ModelSerializer):
     """Serializes the Status model."""
 
     class Meta:
-        model = Status
+        model = models.Status
         fields = '__all__'
 
 
@@ -60,19 +59,19 @@ class CategorySerializer(serializers.ModelSerializer):
     """Serializes the Category model."""
 
     class Meta:
-        model = Category
+        model = models.Category
         fields = '__all__'
 
 
 class PositionSerializer(serializers.ModelSerializer):
     """Serializes the Position model."""
     related_category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
+        queryset=models.Category.objects.all(),
         slug_field='name'
     )
 
     class Meta:
-        model = Position
+        model = models.Position
         fields = '__all__'
 
 
@@ -86,7 +85,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = UserProfile
+        model = models.UserProfile
         fields = [
             'id', 'owner', 'first_name', 'last_name', 'phone_number', 'email',
             'position', 'task_group', 'tasks_to_manage'
@@ -117,18 +116,18 @@ class TaskGroupSerializer(serializers.ModelSerializer):
     """Serializes the TaskGroup model."""
 
     suggested_positions = serializers.SlugRelatedField(
-        queryset=Position.objects.all(),
+        queryset=models.Position.objects.all(),
         many=True,
         slug_field='title'
     )
     team_members = serializers.SlugRelatedField(
-        queryset=UserProfile.objects.all(),
+        queryset=models.UserProfile.objects.all(),
         many=True,
         slug_field='email'
     )
 
     class Meta:
-        model = TaskGroup
+        model = models.TaskGroup
         fields = ['id', 'name', 'suggested_positions',
                   'team_members', 'assigned_task']
 
@@ -183,31 +182,37 @@ class TaskSerializer(serializers.ModelSerializer):
     """Serializes the Task model."""
 
     owner = serializers.SlugRelatedField(
-        queryset=UserProfile.objects.all(),
+        queryset=models.UserProfile.objects.all(),
         slug_field='email',
         required=False
     )
     category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
+        queryset=models.Category.objects.all(),
         slug_field='name'
     )
     priority = serializers.SlugRelatedField(
-        queryset=Priority.objects.all(),
+        queryset=models.Priority.objects.all(),
         slug_field='caption'
     )
     status = serializers.SlugRelatedField(
-        queryset=Status.objects.all(),
+        queryset=models.Status.objects.all(),
         slug_field='caption'
+    )
+    task_resource = serializers.SlugRelatedField(
+        queryset=models.TaskResource.objects.all(),
+        many=True,
+        slug_field='title',
+        required=False
     )
 
     class Meta:
-        model = Task
+        model = models.Task
         fields = [
             'id', 'title', 'description', 'due_date', 'category', 'priority',
-            'status', 'owner', 'task_group'
+            'status', 'owner', 'task_group', 'task_resource'
         ]
         extra_kwargs = {
-            'task_group': {'required': False} 
+            'task_group': {'required': False}
         }
 
     def get_fields(self):
@@ -250,3 +255,26 @@ class TaskSerializer(serializers.ModelSerializer):
 
         # For newly created instances
         return data
+
+
+class TaskResourceSerializer(serializers.ModelSerializer):
+    """Serializes the TaskResource model."""
+
+    class Meta:
+        model = models.TaskResource
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        """Restricts users from seeing task resources of tasks in which
+        they are not a team member, except for staff users.."""
+
+        request = self.context['request']
+        data = super().to_representation(instance)
+
+        if request.user.is_staff or request.user.profile\
+                in instance.task.task_group.team_members.all():
+
+            return data
+
+        else:
+            return {}

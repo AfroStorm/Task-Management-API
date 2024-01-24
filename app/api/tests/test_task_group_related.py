@@ -711,6 +711,7 @@ class TestTaskGroupModel(APITestCase):
         self.client.force_authenticate(user=self.user2)
         url = reverse('task-list')
         data = {
+            'owner': self.user.email,
             'title': 'The first Task',
             'description': 'The task to be tested.',
             'due_date': date(2023, 1, 15),

@@ -191,7 +191,7 @@ class Task(models.Model):
 class TaskResource(models.Model):
     """A Resource of the task (image, document, website link)."""
 
-    title = models.CharField(max_length=100)
+    source_name = models.CharField(max_length=100)
     description = models.TextField()
     resource_link = models.CharField(max_length=500)
 
@@ -205,4 +205,4 @@ class TaskResource(models.Model):
 
     def __str__(self) -> str:
 
-        return f'Title: {self.title} ID: {self.id}'
+        return f'Title: {self.name} ID: {self.id}'

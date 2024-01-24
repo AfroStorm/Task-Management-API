@@ -62,5 +62,10 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 
 ## Next
-- Add a model which contains the actual work related information of the task (links to Images, documents, web sites etc).
+
+- Think aabout creating custom view actions to modify instances.
 - Maybe add a pdf generator
+
+- Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar
+
+- Maybe restructure or brush up the tests (make them consice and omit redundancies)

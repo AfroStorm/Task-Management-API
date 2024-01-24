@@ -97,26 +97,27 @@ class TestTaskModel(APITestCase):
             position=self.position
         )
 
-        # Craeting a taskgroup instance
+        # Creating a taskgroup instance
         self.task_group = TaskGroup.objects.create(
             name='The first TaskGroup'
         )
         self.task_group.suggested_positions.set([self.position])
         self.task_group.team_members.set([self.userprofile])
 
-        # Craeting a taskgroup instance 3
+        # Creating a taskgroup instance 3
         self.task_group3 = TaskGroup.objects.create(
             name='The second TaskGroup'
         )
         self.task_group3.suggested_positions.set([self.position])
         self.task_group3.team_members.set([self.userprofile3])
 
-        # Craeting a taskgroup instance 4
+        # Creating a taskgroup instance 4
         self.task_group4 = TaskGroup.objects.create(
             name='The fourth TaskGroup'
         )
         self.task_group4.suggested_positions.set([self.position])
         self.task_group4.team_members.set([self.userprofile2])
+
         # Creating a task instance and assigning it to user
         self.task = Task.objects.create(
             title='The first Task',
@@ -622,9 +623,9 @@ class TestTaskModel(APITestCase):
             else:
                 self.assertFalse(field_instance.read_only)
 
-    def test_serializer_restricted_representation_staff_user(self):
+    def test_serializer_unrestricted_representation_staff_user(self):
         """Tests if the to representation method of the taskserializer is
-        restricting certain fields from being presented for staff users."""
+        granting unrestricted access to staff users."""
 
         self.user2.is_staff = True
         url = reverse('task-list')
@@ -696,6 +697,7 @@ class TestTaskModel(APITestCase):
         """Tests if the to representation method of the taskserializer is
         restricting certain fields from being presented for non-staff users."""
 
+        # non staff User
         self.user3.is_staff = False
 
         url = reverse('task-list')

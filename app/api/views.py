@@ -1,21 +1,18 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from rest_framework.viewsets import ModelViewSet
-from api import serializers
-from api.models import Task, Priority, Status, Category, Position, \
-    TaskGroup, UserProfile
+from api import serializers, models, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from api.permissions import IsOwner, IsTaskManager
 # Create your views here.
 
 User = get_user_model()
 
 
 class CustomUserView(ModelViewSet):
-    """ModelViewSett for CustomUser model with basic crud functions."""
+    """Modelviewset for CustomUser model with basic crud functions."""
 
     queryset = User.objects.all()
     serializer_class = serializers.CustomUserSerializer
@@ -31,7 +28,7 @@ class CustomUserView(ModelViewSet):
 
         elif self.action == 'update' or\
                 self.action == 'partial_update':
-            permission_classes = [IsAdminUser | IsOwner]
+            permission_classes = [IsAdminUser | permissions.IsOwner]
 
         elif self.action == 'destroy':
             permission_classes = [IsAdminUser]
@@ -43,9 +40,9 @@ class CustomUserView(ModelViewSet):
 
 
 class PositionView(ModelViewSet):
-    """ModelViewSett for Position model with basic crud functions."""
+    """Modelviewset for Position model with basic crud functions."""
 
-    queryset = Position.objects.all()
+    queryset = models.Position.objects.all()
     serializer_class = serializers.PositionSerializer
     authentication_classes = [TokenAuthentication,]
 
@@ -70,9 +67,9 @@ class PositionView(ModelViewSet):
 
 
 class CategoryView(ModelViewSet):
-    """ModelViewSett for Category model with basic crud functions."""
+    """Modelviewset for Category model with basic crud functions."""
 
-    queryset = Category.objects.all()
+    queryset = models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
     authentication_classes = [TokenAuthentication,]
 
@@ -97,9 +94,9 @@ class CategoryView(ModelViewSet):
 
 
 class StatusView(ModelViewSet):
-    """ModelViewSett for Status model with basic crud functions."""
+    """Modelviewset for Status model with basic crud functions."""
 
-    queryset = Status.objects.all()
+    queryset = models.Status.objects.all()
     serializer_class = serializers.StatusSerializer
     authentication_classes = [TokenAuthentication,]
 
@@ -124,9 +121,9 @@ class StatusView(ModelViewSet):
 
 
 class PriorityView(ModelViewSet):
-    """ModelViewSett for Task model with basic crud functions."""
+    """Modelviewset for Task model with basic crud functions."""
 
-    queryset = Priority.objects.all()
+    queryset = models.Priority.objects.all()
     serializer_class = serializers.PrioritySerializer
     authentication_classes = [TokenAuthentication,]
 
@@ -151,9 +148,9 @@ class PriorityView(ModelViewSet):
 
 
 class UserProfileView(ModelViewSet):
-    """ModelViewSett for UserProfile model with basic crud functions."""
+    """Modelviewset for UserProfile model with basic crud functions."""
 
-    queryset = UserProfile.objects.all()
+    queryset = models.UserProfile.objects.all()
     serializer_class = serializers.UserProfileSerializer
     authentication_classes = [TokenAuthentication]
 
@@ -171,7 +168,7 @@ class UserProfileView(ModelViewSet):
 
         elif self.action == 'update' or \
                 self.action == 'partial_update':
-            permission_classes = [IsAdminUser | IsOwner]
+            permission_classes = [IsAdminUser | permissions.IsOwner]
 
         else:
             permission_classes = []
@@ -180,9 +177,9 @@ class UserProfileView(ModelViewSet):
 
 
 class TaskGroupView(ModelViewSet):
-    """ModelViewSett for TaskGroup model with basic crud functions."""
+    """Modelviewset for TaskGroup model with basic crud functions."""
 
-    queryset = TaskGroup.objects.all()
+    queryset = models.TaskGroup.objects.all()
     serializer_class = serializers.TaskGroupSerializer
     authentication_classes = [TokenAuthentication]
 
@@ -201,7 +198,7 @@ class TaskGroupView(ModelViewSet):
 
         elif self.action == 'update' or \
                 self.action == 'partial_update':
-            permission_classes = [IsAdminUser | IsOwner]
+            permission_classes = [IsAdminUser | permissions.IsOwner]
 
         else:
             permission_classes = []
@@ -210,9 +207,9 @@ class TaskGroupView(ModelViewSet):
 
 
 class TaskView(ModelViewSet):
-    """ModelViewSett for Task model with basic crud functions."""
+    """Modelviewset for Task model with basic crud functions."""
 
-    queryset = Task.objects.all()
+    queryset = models.Task.objects.all()
     serializer_class = serializers.TaskSerializer
     authentication_classes = [TokenAuthentication]
 
@@ -227,12 +224,12 @@ class TaskView(ModelViewSet):
         # Only admin or authenticated user with a position that has
         # is_task_manager true can create
         elif self.action == 'create':
-            permission_classes = [IsAdminUser | IsTaskManager]
+            permission_classes = [IsAdminUser | permissions.IsTaskManager]
 
         elif self.action == 'update' or \
                 self.action == 'partial_update' or \
                 self.action == 'destroy':
-            permission_classes = [IsAdminUser | IsOwner]
+            permission_classes = [IsAdminUser | permissions.IsOwner]
 
         else:
             permission_classes = []
@@ -246,6 +243,30 @@ class TaskView(ModelViewSet):
         if 'owner' not in serializer.validated_data:
             serializer.validated_data['owner'] = self.request.user.profile
         return super().perform_create(serializer)
+
+
+class TaskResourceView(ModelViewSet):
+    """Modelviewset for Task model with basic crud functions."""
+
+    queryset = models.TaskResource.objects.all()
+    serializer_class = serializers.TaskResourceSerializer
+    authentication_classes = [TokenAuthentication]
+
+    def get_permissions(self):
+        if self.action == 'retrieve' or\
+                self.action == 'list' or\
+                self.action == 'create':
+            permission_classes = [IsAuthenticated]
+
+        elif self.action == 'update' or\
+                self.action == 'partial_update' or\
+                self.action == 'destroy':
+            permission_classes = [IsAdminUser | permissions.IsTeamMember]
+
+        else:
+            permission_classes = []
+
+        return [permission() for permission in permission_classes]
 
 
 class LoginView(ObtainAuthToken):
