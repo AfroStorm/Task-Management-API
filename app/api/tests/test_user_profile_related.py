@@ -13,251 +13,285 @@ class TestUserProfileModel(APITestCase):
     """Tests that are related to the UserProfile model."""
 
     def setUp(self) -> None:
+        '''The creation of the following instances are necessary to test the
+        user view nd eventual serializer, signal handler etc.'''
 
-        # Disconnect the signal during the test setup
-        post_save.disconnect(signals.create_task_group, sender=models.Task)
+        # Deactivate signal handlers for more control over setUp instances
         post_save.disconnect(signals.create_or_update_profile, sender=User)
+        post_save.disconnect(signals.create_task_group, sender=models.Task)
 
-        # Creating user instance 1
-        self.user = User.objects.create(
+        # Creating user instances
+        self.regular_user1 = User.objects.create(
             email='peterpahn@gmail.com',
             password='blabla123.'
         )
-
-        # Creating user instance 2
-        self.user2 = User.objects.create(
+        self.regular_user2 = User.objects.create(
+            email='christucker@gmail.com',
+            password='blabla123.'
+        )
+        self.profile_less_user = User.objects.create(
+            email='jackiechan@gmail.com',
+            password='blabla123.'
+        )
+        self.admin_user = User.objects.create(
             email='tinaturner@gmail.com',
-            password='blabla123.'
+            password='blabla123.',
+            is_staff=True
         )
 
-        # Creating user instance 3
-        self.user3 = User.objects.create(
-            email='captaincook@gmail.com',
-            password='blabla123.'
-        )
-
-        # Category instance
-        self.category = models.Category.objects.create(
+        # Creating category instances
+        self.human_resource_category = models.Category.objects.create(
             name='Human Resource Management',
-            description='Human Resource Management task category involves'
-            'overseeing recruitment, employee development, performance'
-            'evaluation, and maintaining a positive workplace culture to'
-            'optimize the organizations human capital.'
+            description='''Human Resource Management task category involves
+            overseeing recruitment, employee development, performance
+            evaluation, and maintaining a positive workplace culture to
+            optimize the organizations human capital.'''
         )
 
-        # Position instance
-        self.position = models.Position.objects.create(
+        # Creating position instances
+        self.human_resource_position = models.Position.objects.create(
             title='Human Resource Specialist',
-            description='A Human Resource Specialist focuses on recruitment,'
-            'employee relations, benefits administration, and workforce'
-            'planning, ensuring effective management of human resources'
-            'within an organization.',
+            description='''A Human Resource Specialist focuses on
+            recruitment, employee relations, benefits administration, and
+            workforce planning, ensuring effective management of human
+            resources within an organization.''',
             is_task_manager=False,
-            related_category=self.category
+            related_category=self.human_resource_category
         )
 
-        # Creating userprofile instance 1
-        self.userprofile = models.UserProfile.objects.create(
-            owner=self.user,
+        # Creating userprofile instances
+        self.regular_userprofile = models.UserProfile.objects.create(
+            owner=self.regular_user1,
             first_name='Peter',
             last_name='Pahn',
             phone_number=int('0163557799'),
-            email=self.user.email,
-            position=self.position
+            email=self.regular_user1.email,
+            position=self.human_resource_position
         )
-
-        # Creating userprofile instance 2
-        self.userprofile2 = models.UserProfile.objects.create(
-            owner=self.user2,
+        self.admin_userprofile = models.UserProfile.objects.create(
+            owner=self.admin_user,
             first_name='Tina',
             last_name='Turner',
             phone_number=int('0176559934'),
-            email=self.user2.email,
-            position=self.position
+            email=self.admin_user.email,
+            position=self.human_resource_position
         )
-
-        # Creating userprofile instance 3
-        self.userprofile3 = models.UserProfile.objects.create(
-            first_name='Frank',
-            last_name='Mueller',
+        self.regular_userprofile2 = models.UserProfile.objects.create(
+            first_name='Chris',
+            last_name='Tucker',
             phone_number=int('0176339934'),
-            email='test@gmail.com',
-            position=self.position
+            email=self.regular_user2.email,
+            position=self.human_resource_position
         )
 
     # List view
     def test_authenticated_user_can_access_list(self):
         """Tests if the list view action allows authenticated users."""
 
-        self.client.force_authenticate(user=self.user)
+        # Authenticated user
+        self.client.force_authenticate(user=self.regular_user1)
+
         url = reverse('userprofile-list')
         response = self.client.get(url)
 
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_list(self):
         """Tests if the list view action disallows unauthenticated users."""
 
+        # Unauthenticated user
+
         url = reverse('userprofile-list')
         response = self.client.get(url)
 
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Retrieve view
     def test_authenticated_user_can_access_retrieve(self):
         """Tests if the retrieve view action allows authenticated users."""
 
-        self.client.force_authenticate(user=self.user)
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
+        # Authenticated user
+        self.client.force_authenticate(user=self.regular_user1)
+
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         response = self.client.get(url)
 
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_retrieve(self):
         """Tests if the retrieve view action disallows unauthenticated users.
         """
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
+        # Unauthenticated user
+
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_user1.id]
+        )
         response = self.client.get(url)
 
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Create view
     def test_staff_user_can_access_create(self):
         """Tests if the create view action allows staff users."""
 
-        self.client.force_authenticate(user=self.user2)
-        self.user2.is_staff = True
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
+
         url = reverse('userprofile-list')
         data = {
-            'owner': self.user3.email,
+            'owner': self.profile_less_user.email,
             'first_name': 'Sebastian',
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'email': 's.schuhmacher@gmail.com',
+            'position': self.human_resource_position.id
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Check if the task was created
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_non_staff_user_cant_access_create(self):
         """Tests if the create view action allows staff users."""
 
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
+
         url = reverse('userprofile-list')
         data = {
-            'owner': self.user3.email,
+            'owner': self.profile_less_user.email,
             'first_name': 'Sebastian',
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'email': 's.schuhmacher@gmail.com',
+            'position': self.human_resource_position.id
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Check if the task was created
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_user_cant_access_create(self):
+        """Tests if the create view action allows unauthenticated users."""
+
+        # Unauthenticated user
+
+        url = reverse('userprofile-list')
+        data = {
+            'owner': self.profile_less_user.email,
+            'first_name': 'Sebastian',
+            'last_name': 'Schuhmacher',
+            'phone_number': '0176554488',
+            'email': 's.schuhmacher@gmail.com',
+            'position': self.human_resource_position.id
+        }
+        response = self.client.post(url, data, format='json')
+
+        # Check if access is denied
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Update view
     def test_staff_can_access_update(self):
         """Tests if the update view action allows staff
         users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'first_name': 'Sebastian',
-            'last_name': 'Schuhmacher',
+            'owner': self.regular_user1.email,
+            'first_name': 'Updated',
+            'last_name': 'Name',
             'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'email': 'updatedemail@gmail.com',
+            'position': self.human_resource_position.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_non_staff_cant_access_update(self):
-        """Tests if the update view action disallows non staff users."""
-
-        self.user2.is_staff = False
-        self.client.force_authenticate(user=self.user2)
-
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
-        data = {
-            'owner': self.user3.email,
-            'first_name': 'Sebastian',
-            'last_name': 'Schuhmacher',
-            'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
-        }
-
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_owner_can_access_update(self):
         """Tests if the update view action allows owner."""
 
-        self.client.force_authenticate(user=self.user)
+        # Object owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'first_name': 'Sebastian',
-            'last_name': 'Schuhmacher',
+            'owner': self.regular_user1.email,
+            'first_name': 'Updated',
+            'last_name': 'Name',
             'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'email': 'updatedemail@gmail.com',
+            'position': self.human_resource_position.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_owner_cant_access_update(self):
-        """Tests if the update view action disallows non owner."""
+    def test_non_owner_and_non_staff_cant_access_update(self):
+        """Tests if the update view action disallows non owner and non staff
+        users."""
 
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user who's also not the object owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile2.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'first_name': 'Sebastian',
-            'last_name': 'Schuhmacher',
+            'owner': self.regular_user2.email,
+            'first_name': 'Updated',
+            'last_name': 'Name',
             'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'email': 'updatedemail@gmail.com',
+            'position': self.human_resource_position.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cant_access_update(self):
         """Tests if the update view action disallows unauthenticated
         users."""
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
+        # Unauthenticated user
 
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile2.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'first_name': 'Sebastian',
-            'last_name': 'Schuhmacher',
+            'owner': self.regular_user2.email,
+            'first_name': 'Updated',
+            'last_name': 'Name',
             'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'email': 'updatedemail@gmail.com',
+            'position': self.human_resource_position.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Partial update view
@@ -265,172 +299,190 @@ class TestUserProfileModel(APITestCase):
         """Tests if the partial update view action allows staff
         users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'first_name': 'Updated',
+            'last_name': 'Name',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_non_staff_cant_access_partial_update(self):
-        """Tests if the partial update view action disallows non staff users."""
-
-        self.user2.is_staff = False
-        self.client.force_authenticate(user=self.user2)
-
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
-        data = {
-            'owner': self.user3.email,
-            'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
-        }
-
-        response = self.client.patch(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_owner_can_access_partial_update(self):
         """Tests if the partial update view action allows owner."""
 
-        self.client.force_authenticate(user=self.user)
+        # Object owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'first_name': 'Updated',
+            'last_name': 'Name',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_owner_cant_access_partial_update(self):
-        """Tests if the partial update view action disallows non owner."""
+    def test_non_owner_and_non_staff_cant_access_partial_update(self):
+        """Tests if the partial update view action disallows non owner and
+        non staff users."""
 
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user who's also not the object owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile2.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'first_name': 'Updated',
+            'last_name': 'Name',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_user_cant_access_partial_update(self):
         """Tests if the partial update view action disallows unauthenticated
         users."""
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
+        # Unauthenticated user
 
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile2.id]
+        )
         data = {
-            'owner': self.user3.email,
-            'phone_number': '0176554488',
-            'email': 's.schuhmacher@gmil.com',
-            'position': self.position.id
+            'first_name': 'Updated',
+            'last_name': 'Name',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Destroy view
     def test_staff_can_access_destroy(self):
         """Tests if the destroy view action allows staff users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Saff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         response = self.client.delete(url)
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_non_staff_cant_access_destroy(self):
         """Tests if the destroy view action disallows non staff users."""
 
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
-
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         response = self.client.delete(url)
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_cant_access_destroy(self):
         """Tests if the destroy view action disallows non owner."""
 
-        url = reverse('userprofile-detail', args=[self.userprofile.id])
+        # Unauthenticated user
 
+        url = reverse(
+            'userprofile-detail',
+            args=[self.regular_userprofile.id]
+        )
         response = self.client.delete(url)
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Serializers
-    def test_serializer_fields_read_only_staff_user(self):
+    def test_staff_user_serializer_fields_read_only(self):
         """Tests if the get fields method of the serializer is keeping each
         field writable for staff users (exept id field)."""
 
-        self.user2.is_staff = True
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
         url = reverse('userprofile-list')
-        self.client.force_authenticate(user=self.user2)
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
         serializer = serializers.UserProfileSerializer(
-            instance=self.userprofile,
+            instance=self.regular_userprofile,
             context={'request': request}
         )
 
         fields = serializer.fields
-        fields.pop('id', None)
 
+        # List of expected read-only fields
+        read_only_fields = ['id']
+
+        # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
-            self.assertFalse(field_instance.read_only)
+            if field in read_only_fields:
+                self.assertTrue(field_instance.read_only)
 
-    def test_serializer_fields_read_only_non_staff_user(self):
+            else:
+                self.assertFalse(field_instance.read_only)
+
+    def test_non_staff_user_serializer_fields_read_only(self):
         """Tests if the get fields method of the serializer is setting
         certain fields to read only for non staff users."""
 
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
+
         url = reverse('userprofile-list')
-        self.client.force_authenticate(user=self.user)
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
         serializer = serializers.TaskSerializer(
-            instance=self.userprofile,
+            instance=self.regular_userprofile,
             context={'request': request}
         )
 
         fields = serializer.fields
+
+        # List of expected read-only fields
         read_only_fields = ['id', 'owner', 'task_group', 'tasks_to_manage']
 
+        # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
-            # Checks if all fields expected to be read only true are correct
             if field in read_only_fields:
                 self.assertTrue(field_instance.read_only)
-            # Checks if all fields expected to be read only false are correct
+
             else:
                 self.assertFalse(field_instance.read_only)
 
     # Signal handler
     def test_user_profile_gets_created_and_assigned_when_not_yet_set(self):
         """Tests if the userprofile is created and assigned by the signal
-        handler."""
+        handler after a new user was created."""
 
+        # Activate signal handler for creating
         post_save.connect(signals.create_or_update_profile, sender=User)
 
         url = reverse('customuser-list')
@@ -438,10 +490,9 @@ class TestUserProfileModel(APITestCase):
             'email': 'alibaba@gmail.com',
             'password': 'blabla123.',
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Checks if instance waas created
+        # Checks if instance was created
         profile_id = response.data['profile']
         profile_instance = models.UserProfile.objects.get(id=profile_id)
         self.assertIsNotNone(profile_instance)
@@ -449,45 +500,61 @@ class TestUserProfileModel(APITestCase):
         # Checks if profile was assigned correctly
         user_id = response.data['id']
         user_instance = User.objects.get(id=user_id)
-        self.assertEqual(user_instance, profile_instance.owner)
+        self.assertEqual(user_instance.profile, profile_instance)
 
-    def test_user_profile_is_no_created_and_assigned_when_already_set(self):
-        """Tests if the userprofile doesnt get created and assigned by the
-        signal handler if its already set by the staff user."""
+    def test_user_profile_email_gets_assigned(self):
+        """Tests if the userprofile email field gets assigned by the signal
+        handler based on the newly created user's email."""
 
+        # Activate signal handler for creating
         post_save.connect(signals.create_or_update_profile, sender=User)
 
-        self.user3.is_staff = True
-        self.client.force_authenticate(user=self.user3)
-        url = reverse('customuser-list')
+        # Unauthenticated user so the userprofile gets created by the
+        # signal handler
 
+        url = reverse('customuser-list')
         data = {
             'email': 'alibaba@gmail.com',
             'password': 'blabla123.',
-            'profile': self.userprofile3.id,
         }
+        response = self.client.post(url, data, format='json')
 
+        # Checks if profile email was assigned correctly
+        email_id = response.data['email']
+        profile_instance = models.UserProfile.objects.get(email=email_id)
+        user_id = response.data['id']
+        user_instance = User.objects.get(id=user_id)
+        self.assertEqual(profile_instance.email, user_instance.email)
+
+    def test_user_profile_is_not_created_and_assigned_when_already_set(self):
+        """Tests if the userprofile doesnt get created and assigned by the
+        signal handler after a new user was created if its already set by the
+        staff user."""
+
+        # Activate signal handler for creating
+        post_save.connect(signals.create_or_update_profile, sender=User)
+
+        # Using staff user to have writing rights to all fields when creating
+        # a user, so the owner field can be set
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = reverse('customuser-list')
+        one_off_userprofile = models.UserProfile.objects.create(
+            owner=self.profile_less_user,
+            first_name='Sebastian',
+            last_name='Schuhmacher',
+            phone_number='0176554488',
+            email='s.schuhmacher@gmail.com',
+            position=self.human_resource_position
+        )
+        data = {
+            'email': 'alibaba@gmail.com',
+            'password': 'blabla123.',
+            'profile': one_off_userprofile.id
+        }
         response = self.client.post(url, data, format='json')
 
         # Checks if profile was assigned correctly
         profile_id = response.data['profile']
-        self.assertEqual(profile_id, self.userprofile3.id)
-
-    def test_user_profile_email_gets_assigned(self):
-        """Tests if the userprofile email field gets assigned by the signal
-        handler."""
-
-        post_save.connect(signals.create_or_update_profile, sender=User)
-
-        url = reverse('customuser-list')
-        data = {
-            'email': 'alibaba@gmail.com',
-            'password': 'blabla123.',
-        }
-
-        response = self.client.post(url, data, format='json')
-
-        # Checks if the profile email is the same as the user email
-        user_email = response.data['email']
-        profile_instance = models.UserProfile.objects.get(email=user_email)
-        self.assertEqual(profile_instance.email, user_email)
+        profile_instance = models.UserProfile.objects.get(id=profile_id)
+        self.assertEqual(one_off_userprofile, profile_instance)

@@ -13,7 +13,7 @@ class TestCustomUserModel(APITestCase):
 
     def setUp(self) -> None:
         '''The creation of the following instances are necessary to test the
-        category view nd eventual serializer, signal handler etc.'''
+        user view nd eventual serializer, signal handler etc.'''
 
         # Deactivate signal handlers for more control over setUp instances
         post_save.disconnect(signals.create_or_update_profile, sender=User)

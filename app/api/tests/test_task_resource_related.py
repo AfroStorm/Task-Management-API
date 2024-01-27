@@ -498,8 +498,6 @@ class TestsTaskResourceModel(APITestCase):
             dict(ordered_dict) for ordered_dict in representation_data
         ]
 
-        print(f'REPRESENTATION DATA: {representation_data}')
-
         # The representation_data should contain all data
         expected_data = [
             {},

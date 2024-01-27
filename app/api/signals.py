@@ -19,7 +19,7 @@ def create_or_update_profile(sender, instance, created, **kwargs):
             owner=instance,
             email=instance.email
         )
-        profile.save
+        profile.save()
     # If a task was not created and a profile already exists update it
     else:
         instance.profile.email = instance.email
