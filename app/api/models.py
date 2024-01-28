@@ -205,4 +205,4 @@ class TaskResource(models.Model):
 
     def __str__(self) -> str:
 
-        return f'Title: {self.name} ID: {self.id}'
+        return f'Title: {self.source_name} ID: {self.id}'

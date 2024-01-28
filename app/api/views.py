@@ -246,7 +246,7 @@ class TaskView(ModelViewSet):
 
 
 class TaskResourceView(ModelViewSet):
-    """Modelviewset for Task model with basic crud functions."""
+    """Modelviewset for TaskResource model with basic crud functions."""
 
     queryset = models.TaskResource.objects.all()
     serializer_class = serializers.TaskResourceSerializer

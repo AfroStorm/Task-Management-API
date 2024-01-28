@@ -63,10 +63,12 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 ## Next
 
-- Think aabout creating custom view actions to modify instances.
+- Think about creating custom view actions to modify instances.
 - Maybe add a pdf generator
 
 - Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar
 
-- Maybe restructure or brush up the tests (make them consice and omit redundancies)
+- Maybe restructure or brush up the tests (make them consice and omit redundancies).
+Continue the modification of the taskresource serializer.
+After tht continue the tests for task resources.
 - after restructuring the tests do a final check for any typos or grammatical errors

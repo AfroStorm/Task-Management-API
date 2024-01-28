@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from api import models
+from rest_framework.exceptions import ValidationError
 from django.db.models.query import QuerySet
 
 
@@ -263,6 +264,26 @@ class TaskResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.TaskResource
         fields = '__all__'
+
+    def validate(self, data):
+        """Validate that the user is a team member of the selected task."""
+
+        request = self.context['request']
+
+        if request.user.is_staff:
+            return data
+
+        task_instance = data['task']
+        # Check if the user is a team member of the selected task
+        if request.user.profile not in\
+                task_instance.task_group.team_members.all():
+
+            raise ValidationError(
+                '''The request user is not a member of the selected task's
+                team.'''
+            )
+
+        return data
 
     def to_representation(self, instance):
         """Restricts users from seeing task resources of tasks in which
