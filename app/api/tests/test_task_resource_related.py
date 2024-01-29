@@ -177,7 +177,7 @@ class TestsTaskResourceModel(APITestCase):
 
         url = reverse(
             'taskresource-detail',
-            args=[self.regular_userprofile.id]
+            args=[self.task_resource1.id]
         )
         response = self.client.get(url)
 
@@ -192,7 +192,7 @@ class TestsTaskResourceModel(APITestCase):
 
         url = reverse(
             'taskresource-detail',
-            args=[self.regular_user1.id]
+            args=[self.task_resource1.id]
         )
         response = self.client.get(url)
 
@@ -203,6 +203,7 @@ class TestsTaskResourceModel(APITestCase):
     def test_authenticated_user_can_access_create(self):
         """Tests if the create view action allows authenticated users."""
 
+        # Authenticated user
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('taskresource-list')
@@ -210,224 +211,233 @@ class TestsTaskResourceModel(APITestCase):
             'source_name': 'Another Image',
             'description': 'Another descripion text for the instance',
             'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
+            'task': self.task1.id
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Check if the task resource was created
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_unauthenticated_user_cant_access_create(self):
         """Tests if the create view action disallows unauthenticated users.
         """
 
+        # Unauthenticated user
+
         url = reverse('taskresource-list')
         data = {
             'source_name': 'Another Image',
             'description': 'Another descripion text for the instance',
             'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
+            'task': self.task1.id
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Check if the task resource was created
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_staff_can_access_create(self):
-        """Tests if the create view action allows staff users."""
-
-        self.regular_user1.is_staff = True
-        self.client.force_authenticate(user=self.regular_user1)
-
-        url = reverse('taskresource-list')
-        data = {
-            'source_name': 'Another Image',
-            'description': 'Another descripion text for the instance',
-            'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
-        }
-
-        response = self.client.post(url, data, format='json')
-
-        # Check if the task resource was created
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
     # Update view
-    def test_task_team_member_can_access_update(self):
-        """Tests if the update view action allows task team members."""
+    def test_staff_can_access_update(self):
+        """Tests if the update view action allows staff users."""
 
-        # User instance is in task.task_group.team_members
-        self.client.force_authenticate(user=self.regular_user1)
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
         data = {
             'source_name': 'Updated Image',
             'description': 'Updated descripion text for the instance',
             'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
+            'task': self.task1.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_task_team_member_can_access_update(self):
+        """Tests if the update view action allows task team members
+        (task_resource.task.task_group.team_members)."""
+
+        # Task team member
+        self.client.force_authenticate(user=self.regular_user1)
+
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
+        data = {
+            'source_name': 'Updated Image',
+            'description': 'Updated descripion text for the instance',
+            'resource_link': 'https://www.example.com/sample-page',
+            'task': self.task1.id
+        }
+        response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_task_team_member_cant_access_update(self):
         """Tests if the update view action disallows non-task team members.
         """
 
-        self.client.force_authenticate(user=self.admin_user)
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Non-task member
+        self.client.force_authenticate(user=self.regular_user1)
+        url = reverse('taskresource-detail', args=[self.task_resource2.id])
         data = {
             'source_name': 'Updated Image',
             'description': 'Updated descripion text for the instance',
             'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
+            'task': self.task2.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_staff_can_access_update(self):
-        """Tests if the update view action allows staff users."""
-
-        self.admin_user.is_staff = True
-        self.client.force_authenticate(user=self.admin_user)
-
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
-        data = {
-            'source_name': 'Updated Image',
-            'description': 'Updated descripion text for the instance',
-            'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
-        }
-
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_update(self):
         """Tests if the update view action disallows unauthenticated users.
         """
 
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Unauthenticated user
+
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
         data = {
             'source_name': 'Updated Image',
             'description': 'Updated descripion text for the instance',
             'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task.id
+            'task': self.task1.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Partial update view
+    def test_staff_can_access_partial_update(self):
+        """Tests if the partial update action allows staff users."""
+
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
+        data = {
+            'source_name': 'Partially updated Image',
+            'description': '''Partially updated descripion text for the
+                instance''',
+        }
+        response = self.client.patch(url, data, format='json')
+
+        # Check if access is granted
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_task_team_member_can_access_partial_update(self):
         """Tests if the partial update action allows task team members."""
 
-        # User instance is in task.task_group.team_members
+        # Task team member
         self.client.force_authenticate(user=self.regular_user1)
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
         data = {
             'source_name': 'Partially updated Image',
-            'description': 'Partially updated descripion text for the instance',
+            'description': '''Partially updated descripion text for the
+                instance''',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_task_team_member_cant_access_partial_update(self):
         """Tests if the partial update action disallows non-task team members.
         """
 
-        self.client.force_authenticate(user=self.admin_user)
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Non-task team member
+        self.client.force_authenticate(user=self.regular_user1)
+
+        url = reverse('taskresource-detail', args=[self.task_resource2.id])
         data = {
             'source_name': 'Partially updated Image',
-            'description': 'Partially updated descripion text for the instance',
+            'description': '''Partially updated descripion text for the
+                instance''',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_staff_can_access_partial_update(self):
-        """Tests if the partial update action allows staff users."""
-
-        self.admin_user.is_staff = True
-        self.client.force_authenticate(user=self.admin_user)
-
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
-        data = {
-            'source_name': 'Partially updated Image',
-            'description': 'Partially updated descripion text for the instance',
-        }
-
-        response = self.client.patch(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_partial_update(self):
         """Tests if the partial update view action disallows unauthenticated users.
         """
 
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Unauthenticated user
+
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
         data = {
             'source_name': 'Partially updated Image',
-            'description': 'Partially updated descripion text for the instance',
+            'description': '''Partially updated descripion text for the
+                instance''',
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Destroy view
+    def test_staff_can_access_destroy(self):
+        """Tests if the destroy view action allows staff users."""
+
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
+        response = self.client.delete(url)
+
+        # Check if access is granted
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_task_team_member_can_access_destroy(self):
         """Tests if the destroy view action allows task team members."""
 
-        # User instance is in task.task_group.team_members
+        # Task team member
         self.client.force_authenticate(user=self.regular_user1)
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
 
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
         response = self.client.delete(url)
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_non_task_team_member_cant_access_destroy(self):
         """Tests if the destroy view action disallows non-task team members.
         """
 
-        self.client.force_authenticate(user=self.admin_user)
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Non-task team member
+        self.client.force_authenticate(user=self.regular_user1)
 
+        url = reverse('taskresource-detail', args=[self.task_resource2.id])
         response = self.client.delete(url)
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_staff_can_access_destroy(self):
-        """Tests if the destroy view action allows staff users."""
-
-        self.admin_user.is_staff = True
-        self.client.force_authenticate(user=self.admin_user)
-
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
-
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_unauthenticated_user_cant_access_destroy(self):
         """Tests if the destroy view action disallows unauthenticated users.
         """
 
-        url = reverse('taskresource-detail', args=[self.task_resource.id])
+        # Unauthenticated user
 
+        url = reverse('taskresource-detail', args=[self.task_resource1.id])
         response = self.client.delete(url)
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Serializer
     def test_serializer_unrestricted_representation_staff_user(self):
-        """Tests if the to representation method of the taskresource 
+        """Tests if the to representation method of the taskresource
         serializer is granting unrestricted access to staff users."""
 
         # Staff User
-        self.admin_user.is_staff = True
-
-        url = reverse('task-list')
         self.client.force_authenticate(user=self.admin_user)
 
+        url = reverse('task-list')
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
@@ -440,19 +450,21 @@ class TestsTaskResourceModel(APITestCase):
 
         representation_data = serializer.data
 
-        # Converting ordered_dict into dict for convenience
+        # Converting ordered_dict into regular dictionary so the different
+        # order of the key value pairs belonging to the dictionaries
+        # of the representation_data and the expected_data wont throw a
+        # comparison error.
         representation_data = [
             dict(ordered_dict) for ordered_dict in representation_data
         ]
 
-        # The representation_data should contain all data
         expected_data = [
             {
-                'id': self.task_resource.id,
-                'source_name': self.task_resource.source_name,
-                'description': self.task_resource.description,
-                'resource_link': self.task_resource.resource_link,
-                'task': self.task.id
+                'id': self.task_resource1.id,
+                'source_name': self.task_resource1.source_name,
+                'description': self.task_resource1.description,
+                'resource_link': self.task_resource1.resource_link,
+                'task': self.task1.id
 
             },
             {
@@ -465,33 +477,49 @@ class TestsTaskResourceModel(APITestCase):
             }
         ]
 
+        # Sorting list by its dictionaries.
+        # lambda gets the ID of each dictionary wihin the list and orders
+        # the dictionaries by it.
+        # Now both representation and expected data can be compared
+        representation_data = sorted(
+            representation_data, key=lambda dict: dict.get('id', 0)
+        )
+        expected_data = sorted(
+            expected_data, key=lambda dict: dict.get('id', 0)
+        )
+
+        # Check if representation data contains all instances
         self.assertEqual(representation_data, expected_data)
 
-        # Example of missing data to double-check
         false_data = [
             {
-                'id': self.task_resource.id,
-                'source_name': self.task_resource.source_name,
-                'description': self.task_resource.description,
-                'resource_link': self.task_resource.resource_link,
-                'task': self.task.id
+                'id': self.task_resource1.id,
+                'source_name': self.task_resource1.source_name,
+                'description': self.task_resource1.description,
+                'resource_link': self.task_resource1.resource_link,
+                'task': self.task1.id
 
             },
             {}
         ]
 
+        # Look further up in function for explanation
+        false_data = sorted(
+            false_data, key=lambda dict: dict.get('id', 0)
+        )
+
+        # Double-check with purposely wrong data
         self.assertNotEqual(representation_data, false_data)
 
-    def test_serializer_restricted_representation(self):
+    def test_serializer_restricted_representation_non_team_member(self):
         """Tests if the to representation method of the taskserializer is
         restricting certain fields from being presented for non team
         members."""
 
         # non-staff User
+        self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-list')
-        self.client.force_authenticate(user=self.regular_user2)
-
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
@@ -504,34 +532,46 @@ class TestsTaskResourceModel(APITestCase):
 
         representation_data = serializer.data
 
-        # Converting ordered_dict into dict for convenience
+        # Converting ordered_dict into regular dictionary so the different
+        # order of the key value pairs belonging to the dictionaries
+        # of the representation_data and the expected_data wont throw a
+        # comparison error.
         representation_data = [
             dict(ordered_dict) for ordered_dict in representation_data
         ]
 
-        # The representation_data should contain all data
         expected_data = [
             {},
             {
-                'id': self.task_resource2.id,
-                'source_name': self.task_resource2.source_name,
-                'description': self.task_resource2.description,
-                'resource_link': self.task_resource2.resource_link,
-                'task': self.task2.id
-
+                'id': self.task_resource1.id,
+                'source_name': self.task_resource1.source_name,
+                'description': self.task_resource1.description,
+                'resource_link': self.task_resource1.resource_link,
+                'task': self.task1.id
             }
         ]
 
+        # Sorting list by its dictionaries.
+        # lambda gets the ID of each dictionary wihin the list and orders
+        # the dictionaries by it.
+        # Now both representation and expected data can be compared
+        representation_data = sorted(
+            representation_data, key=lambda dict: dict.get('id', 0)
+        )
+        expected_data = sorted(
+            expected_data, key=lambda dict: dict.get('id', 0)
+        )
+
+        # Check if representation data contains only team member instances
         self.assertEqual(representation_data, expected_data)
 
-        # Example of missing data to double-check
         false_data = [
             {
-                'id': self.task_resource.id,
-                'source_name': self.task_resource.source_name,
-                'description': self.task_resource.description,
-                'resource_link': self.task_resource.resource_link,
-                'task': self.task.id
+                'id': self.task_resource1.id,
+                'source_name': self.task_resource1.source_name,
+                'description': self.task_resource1.description,
+                'resource_link': self.task_resource1.resource_link,
+                'task': self.task1.id
 
             },
             {
@@ -544,4 +584,10 @@ class TestsTaskResourceModel(APITestCase):
             }
         ]
 
+        # Look further up in function for explanation
+        false_data = sorted(
+            false_data, key=lambda dict: dict.get('id', 0)
+        )
+
+        # Double-check with purposely wrong data
         self.assertNotEqual(representation_data, false_data)
