@@ -2,15 +2,11 @@ from rest_framework.test import APITestCase
 from datetime import date
 from api.serializers import TaskGroupSerializer
 from django.urls import reverse
-from api.models import Priority, Status, Category, Position, UserProfile, \
-    Task, TaskGroup
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from django.db.models.signals import post_save
-from api.signals import create_task_group, create_or_update_profile
+from api import signals, models
 
-
-"""Tests that are related to the task group model."""
 
 User = get_user_model()
 
@@ -19,414 +15,399 @@ class TestTaskGroupModel(APITestCase):
     """Tests that are related to the task group model."""
 
     def setUp(self) -> None:
-        # Disconnect the signal during the test setup
-        post_save.disconnect(create_task_group, sender=Task)
-        post_save.disconnect(create_or_update_profile, sender=User)
+        '''The creation of the following instances are necessary to test the
+        task group view nd eventual serializer, signal handler etc.'''
 
-        # Creating user instance 1
-        self.user = User.objects.create(
+        # Deactivate signal handlers for more control over setUp instances
+        post_save.disconnect(signals.create_or_update_profile, sender=User)
+        post_save.disconnect(signals.create_task_group, sender=models.Task)
+
+        # Creating user instances
+        self.regular_user1 = User.objects.create(
             email='peterpahn@gmail.com',
             password='blabla123.'
         )
-
-        # Creating user instance 2
-        self.user2 = User.objects.create(
-            email='tinaturner@gmail.com',
-            password='blabla123.'
+        self.regular_user2 = User.objects.create(
+            email='christucker@gmail.com',
+            password='blabla123.',
         )
-
-        # Creating user instance 3
-        self.user3 = User.objects.create(
-            email='captaincook@gmail.com',
-            password='blabla123.'
+        self.admin_user = User.objects.create(
+            email='tinaturner@gmail.com',
+            password='blabla123.',
+            is_staff=True
         )
 
         # Priority instance
-        caption = 'High Priority'
-        self.priority = Priority.objects.create(caption=caption)
+        self.priority = models.Priority.objects.create(
+            caption='High Priority'
+        )
 
         # Status instance
         caption = 'In Progress'
-        self.status = Status.objects.create(caption=caption)
+        self.status = models.Status.objects.create(caption=caption)
 
-        # Category instance
-        self.category = Category.objects.create(
+        # Creating category instances
+        self.human_resource_category = models.Category.objects.create(
             name='Human Resource Management',
-            description='Human Resource Management task category involves'
-            'overseeing recruitment, employee development, performance'
-            'evaluation, and maintaining a positive workplace culture to'
-            'optimize the organizations human capital.'
+            description='''Human Resource Management task category involves
+            overseeing recruitment, employee development, performance
+            evaluation, and maintaining a positive workplace culture to
+            optimize the organizations human capital.'''
         )
 
-        # Position instance
-        self.position = Position.objects.create(
+        # Creating position instances
+        self.human_resource_position = models.Position.objects.create(
             title='Human Resource Specialist',
-            description='A Human Resource Specialist focuses on recruitment,'
-            'employee relations, benefits administration, and workforce'
-            'planning, ensuring effective management of human resources'
-            'within an organization.',
-            is_task_manager=False,
-            related_category=self.category
+            description='''A Human Resource Specialist focuses on
+            recruitment, employee relations, benefits administration, and
+            workforce planning, ensuring effective management of human
+            resources within an organization.''',
+            is_task_manager=True,
+            related_category=self.human_resource_category,
         )
 
-        # Position instance 2
-        self.position2 = Position.objects.create(
-            title='Recruitment Specialist',
-            description='In charge of the recruitment and selection process,'
-            'including sourcing candidates, conducting interviews, and'
-            'managing the onboarding process for new employees.',
-            is_task_manager=False,
-            related_category=self.category
-        )
-
-        # Position instance 3
-        self.position3 = Position.objects.create(
-            title='Training and Development Specialist',
-            description='Focuses on employee training and development'
-            'programs, assessing training needs, designing and delivering'
-            'training sessions, and supporting employees in enhancing'
-            'their skills.',
-            is_task_manager=False,
-            related_category=self.category
-        )
-
-        # Position instance 4
-        self.position4 = Position.objects.create(
-            title='Compensation and Benefits Specialist',
-            description='Manages the companys compensation and benefits'
-            'programs, including salary structures, incentive programs,'
-            'health insurance, and other employee benefits.',
-            is_task_manager=False,
-            related_category=self.category
-        )
-
-        # Position instance 5
-        self.position5 = Position.objects.create(
-            title='Employee Relations Specialist',
-            description='Handles employee relations matters, including'
-            'conflict resolution, employee grievances, and ensuring a'
-            'positive and productive work environment. This role may also'
-            'involve conducting investigations into employee complaints and'
-            'implementing strategies to improve employee engagement.',
-            is_task_manager=False,
-            related_category=self.category
-        )
-
-        # Creating userprofile instance 1
-        self.userprofile = UserProfile.objects.create(
-            owner=self.user,
+        # Creating userprofile instances
+        self.regular_userprofile = models.UserProfile.objects.create(
+            owner=self.regular_user1,
             first_name='Peter',
             last_name='Pahn',
             phone_number=int('0163557799'),
-            email=self.user.email,
-            position=self.position
+            email=self.regular_user1.email,
+            position=self.human_resource_position
         )
-
-        # Creating userprofile instance 2
-        self.userprofile2 = UserProfile.objects.create(
-            owner=self.user2,
+        self.regular_userprofile2 = models.UserProfile.objects.create(
+            first_name='Chris',
+            last_name='Tucker',
+            phone_number=int('0176339934'),
+            email=self.regular_user2.email,
+            position=self.human_resource_position
+        )
+        self.admin_userprofile = models.UserProfile.objects.create(
+            owner=self.admin_user,
             first_name='Tina',
             last_name='Turner',
             phone_number=int('0176559934'),
-            email=self.user2.email,
-            position=self.position
+            email=self.admin_user.email,
+            position=self.human_resource_position
         )
 
-        # Creating userprofile instance 3
-        self.userprofile3 = UserProfile.objects.create(
-            owner=self.user3,
-            first_name='Captain',
-            last_name='Cook',
-            phone_number=int('0176577922'),
-            email=self.user3.email,
-            position=self.position
-        )
-
-        # Craeting a taskgroup instance
-        self.task_group = TaskGroup.objects.create(
+        # Creating taskgroup instances
+        # First task group
+        self.task_group1 = models.TaskGroup.objects.create(
             name='The first TaskGroup'
         )
-        self.task_group.suggested_positions.set([self.position])
-        self.task_group.team_members.set([self.userprofile])
-
-        # Craeting a taskgroup instance 3
-        self.task_group3 = TaskGroup.objects.create(
+        self.task_group1.suggested_positions.set(
+            [self.human_resource_position]
+        )
+        self.task_group1.team_members.set([self.regular_userprofile])
+        # Second task group
+        self.task_group2 = models.TaskGroup.objects.create(
             name='The second TaskGroup'
         )
-        self.task_group3.suggested_positions.set([self.position])
-        self.task_group3.team_members.set([self.userprofile3])
+        self.task_group2.suggested_positions.set(
+            [self.human_resource_position]
+        )
+        self.task_group2.team_members.set([self.regular_userprofile2])
+        # Thrid task group
+        self.task_group3 = models.TaskGroup.objects.create(
+            name='The third TaskGroup'
+        )
+        self.task_group3.suggested_positions.set(
+            [self.human_resource_position]
+        )
+        self.task_group3.team_members.set([self.admin_userprofile])
 
-        # Creating a task instance and assigning it to user
-        self.task = Task.objects.create(
+        # Creating task instances
+        self.task1 = models.Task.objects.create(
             title='The first Task',
             description='The task to be tested.',
             due_date=date(2023, 1, 15),
-            category=self.category,
+            category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
-            owner=self.userprofile,
-            task_group=self.task_group
+            owner=self.regular_userprofile,
+            task_group=self.task_group1
         )
-
-        # Creating a task instance and assigning it to user3
-        self.task3 = Task.objects.create(
+        self.task2 = models.Task.objects.create(
             title='The second Task',
-            description='The second task to be tested.',
-            due_date=date(2023, 1, 16),
-            category=self.category,
+            description='The task to be tested.',
+            due_date=date(2023, 1, 15),
+            category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
-            owner=self.userprofile3,
-            task_group=self.task_group3
+            owner=self.regular_userprofile2,
+            task_group=self.task_group2
         )
 
     # List view
     def test_authenticated_user_can_access_list(self):
         """Tests if the list view action allows authenticated users."""
 
-        self.client.force_authenticate(user=self.user)
-        url = reverse('taskgroup-list')
+        # Authenticated user
+        self.client.force_authenticate(user=self.regular_user1)
 
-        response = self.client.get(url, format='json')
+        url = reverse('task-list')
+        response = self.client.get(url)
 
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_list(self):
         """Tests if the list view action disallows unauthenticated users."""
 
-        url = reverse('taskgroup-list')
+        # Unauthenticated user
+
+        url = reverse('task-list')
         response = self.client.get(url)
 
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # Retrieve
+    # Retrieve view
     def test_authenticated_user_can_access_retrieve(self):
-        """Tests if the retrieve view action disallows unauthenticated
-        users."""
+        """Tests if the retrieve view action allows authenticated users."""
 
-        self.client.force_authenticate(user=self.user)
-        url = reverse('taskgroup-detail', args=[self.task.id])
+        # Authenticated user
+        self.client.force_authenticate(user=self.regular_user1)
 
+        url = reverse(
+            'task-detail',
+            args=[self.task1.id]
+        )
         response = self.client.get(url)
 
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_user_cant_access_retrieve(self):
-        """Tests if the retrieve view action disallows unauthenticated
-        users."""
+        """Tests if the retrieve view action disallows unauthenticated users.
+        """
 
-        url = reverse('taskgroup-detail', args=[self.task.id])
+        # Unauthenticated user
+
+        url = reverse(
+            'task-detail',
+            args=[self.task1.id]
+        )
         response = self.client.get(url)
 
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Create view
     def test_staff_can_access_create(self):
         """Tests if the create view action allows staff users."""
 
-        self.client.force_authenticate(user=self.user)
-        self.user.is_staff = True
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        new_task = Task.objects.create(
+        # Creating task instance
+        new_task = models.Task.objects.create(
             title='The new Task',
             description='The new task to be tested.',
             due_date=date(2023, 1, 20),
-            category=self.category,
+            category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
-            owner=self.userprofile,
+            owner=self.regular_userprofile,
         )
+
         url = reverse('taskgroup-list')
         data = {
             'name': 'The first TaskGroup',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
             'assigned_task': new_task.id
         }
 
         response = self.client.post(url, data, format='json')
 
-        # Check if the task was created
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_non_staff_cant_access_create(self):
-        """Tests if the create view action diallows non staff users."""
+        """Tests if the create view action disallows non staff users."""
 
-        self.user.is_staff = False
-        self.client.force_authenticate(user=self.user)
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
 
-        new_task = Task.objects.create(
+        # Creating task instance
+        new_task = models.Task.objects.create(
             title='The new Task',
             description='The new task to be tested.',
             due_date=date(2023, 1, 20),
-            category=self.category,
+            category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
-            owner=self.userprofile,
+            owner=self.regular_userprofile,
         )
+
         url = reverse('taskgroup-list')
         data = {
             'name': 'The first TaskGroup',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
             'assigned_task': new_task.id
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Check if the permission is denied for non staff users
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_cant_access_create(self):
         """Tests if the create view action diallows unauthenticated users."""
 
-        self.user.is_staff = True
+        # Unauthenticated user
 
-        new_task = Task.objects.create(
+        # Creating task instance
+        new_task = models.Task.objects.create(
             title='The new Task',
             description='The new task to be tested.',
             due_date=date(2023, 1, 20),
-            category=self.category,
+            category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
-            owner=self.userprofile,
+            owner=self.regular_userprofile,
         )
+
         url = reverse('taskgroup-list')
         data = {
             'name': 'The first TaskGroup',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
             'assigned_task': new_task.id
         }
-
         response = self.client.post(url, data, format='json')
 
-        # Check if the permission is denied for aunauthenticated users
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Destroy view
     def test_staff_can_access_destroy(self):
         """Tests if the destroy view action allows staff users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group3.id])
         response = self.client.delete(url)
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_non_staff_cant_access_destroy(self):
         """Tests if the destroy view action disallows non staff users."""
 
-        self.user2.is_staff = False
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         response = self.client.delete(url)
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_cant_access_destroy(self):
         """Tests if the destroy view action disallows unauthenticated
         users."""
 
-        self.user2.is_staff = True
+        # Unauthenticated user
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         response = self.client.delete(url)
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Update view
     def test_staff_can_access_update(self):
-        """Tests if the update view action allows staff
-        users."""
+        """Tests if the update view action allows staff users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         data = {
             'name': 'Updated task group',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
-            'assigned_task': self.task.id
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
+            'assigned_task': self.task1.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_staff_cant_access_update(self):
-        """Tests if the update view action allows staff
-        users."""
+        """Tests if the update view action allows staff users."""
 
-        self.user2.is_staff = False
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group2.id])
         data = {
             'name': 'Updated task group',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
-            'assigned_task': self.task.id
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
+            'assigned_task': self.task2.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_owner_can_access_update(self):
-        """Tests if the update view action allows owner."""
+        """Tests if the update view action allows task owner."""
 
-        self.client.force_authenticate(user=self.user)
+        # Task object owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         data = {
             'name': 'Updated task group',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
-            'assigned_task': self.task.id
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
+            'assigned_task': self.task1.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_owner_cant_access_update(self):
         """Tests if the update view action disallows non owner."""
 
-        self.client.force_authenticate(user=self.user2)
+        # Non-task owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group2.id])
         data = {
             'name': 'Updated task group',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
-            'assigned_task': self.task.id
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
+            'assigned_task': self.task2.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_cant_access_update(self):
         """Tests if the update view action disallows unauthenticated
         users."""
 
-        self.user2.is_staff = True
+        # Unauthenticated user
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         data = {
             'name': 'Updated task group',
-            'suggested_positions': [self.position.title],
-            'team_members': [self.userprofile.email],
-            'assigned_task': self.task.id
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
+            'assigned_task': self.task1.id
         }
-
         response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Partial update view
@@ -434,80 +415,83 @@ class TestTaskGroupModel(APITestCase):
         """Tests if the partial update view action allows staff
         users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         data = {
             'name': 'Partially updated task group',
-            'suggested_positions': [self.position.title],
+            'suggested_positions': [self.human_resource_position.title]
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_staff_cant_access_partial_update(self):
         """Tests if the partial update view action disallows non staff
         users."""
 
-        self.user2.is_staff = False
-        self.client.force_authenticate(user=self.user2)
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group2.id])
         data = {
             'name': 'Partially updated task group',
-            'suggested_positions': [self.position.title],
+            'suggested_positions': [self.human_resource_position.title],
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_owner_can_access_partial_update(self):
         """Tests if the partial update view action allows owner."""
 
-        self.client.force_authenticate(user=self.user)
+        # Task owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         data = {
             'name': 'Partially updated task group',
-            'suggested_positions': [self.position.title],
+            'suggested_positions': [self.human_resource_position.title],
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_owner_cant_access_partial_update(self):
         """Tests if the partial update view action disallows owner."""
 
-        self.client.force_authenticate(user=self.user2)
+        # Non-task owner
+        self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
-
+        url = reverse('taskgroup-detail', args=[self.task_group2.id])
         data = {
             'name': 'Partially updated task group',
-            'suggested_positions': [self.position.title],
+            'suggested_positions': [self.human_resource_position.title],
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_unauthenticated_cant_access_partial_update(self):
         """Tests if the partial update view action disallows staff
         users."""
 
-        self.user2.is_staff = True
+        # Unauthenticated user
 
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
 
         data = {
             'name': 'Partially updated task group',
-            'suggested_positions': [self.position.title],
+            'suggested_positions': [self.human_resource_position.title],
         }
-
         response = self.client.patch(url, data, format='json')
+
+        # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Serializer
@@ -515,50 +499,57 @@ class TestTaskGroupModel(APITestCase):
         """Tests if the get_fields method of the taskserializer is setting
         only the id field to read-only for staff users."""
 
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
         serializer = TaskGroupSerializer(
-            instance=self.task_group,
+            instance=self.task_group1,
             context={'request': request}
         )
 
         fields = serializer.fields
-        # ID field is read only by default
-        fields.pop('id', None)
 
-        # Checks if all other fields are modifiable
+        # List of expected read-only fields
+        read_only_fields = ['id']
+
+        # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
-            self.assertFalse(field_instance.read_only)
+            if field in read_only_fields:
+                self.assertTrue(field_instance.read_only)
+
+            else:
+                self.assertFalse(field_instance.read_only)
 
     def test_owner_fields_read_only(self):
         """Tests if the get_fields method of the taskserializer is setting
         certain fields to read-only for for the owner."""
 
-        self.client.force_authenticate(user=self.user)
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
+        # Task owner
+        self.client.force_authenticate(user=self.regular_user1)
 
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
         serializer = TaskGroupSerializer(
-            instance=self.task_group,
+            instance=self.task_group1,
             context={'request': request}
         )
 
         fields = serializer.fields
+
+        # List of expected read-only fields
         read_only_fields = ['id', 'assigned_task']
 
+        # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
-            # Checks if all fields expected to be read only true are correct
             if field in read_only_fields:
                 self.assertTrue(field_instance.read_only)
 
-            # Checks if all fields expected to be read only false are correct
             else:
                 self.assertFalse(field_instance.read_only)
 
@@ -566,16 +557,14 @@ class TestTaskGroupModel(APITestCase):
         """Tests if the to_representation method of the taskgroupserializer is
         granting full representation to each task."""
 
-        # Staff users can see every instance
-        self.user2.is_staff = True
-        self.client.force_authenticate(user=self.user2)
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
         url = reverse('taskgroup-list')
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
-        queryset = TaskGroup.objects.all()
-
+        queryset = models.TaskGroup.objects.all()
         serializer = TaskGroupSerializer(
             instance=queryset,
             many=True,
@@ -583,38 +572,66 @@ class TestTaskGroupModel(APITestCase):
         )
 
         representation_data = serializer.data
-        representation_data_list = [dict(item) for item in representation_data]
+
+        # Converting ordered_dict into regular dictionary so the different
+        # order of the key value pairs within the dictionaries
+        # of the representation_data and the expected_data wont throw a
+        # comparison error.
+        representation_data = [
+            dict(ordered_dict) for ordered_dict in representation_data
+        ]
 
         expected_data = [
             {
-                'id': self.task_group.id,
-                'name': 'The first TaskGroup',
-                'suggested_positions': ['Human Resource Specialist'],
-                'team_members': ['peterpahn@gmail.com'],
-                'assigned_task': self.task.id
+                'id': self.task_group1.id,
+                'name': self.task_group1.name,
+                'suggested_positions': [self.human_resource_position.title],
+                'team_members': [self.regular_userprofile.email],
+                'assigned_task': self.task1.id
+            },
+            {
+                'id': self.task_group2.id,
+                'name': self.task_group2.name,
+                'suggested_positions': [self.human_resource_position.title],
+                'team_members': [self.regular_userprofile2.email],
+                'assigned_task': self.task2.id
             },
             {
                 'id': self.task_group3.id,
-                'name': 'The second TaskGroup',
-                'suggested_positions': ['Human Resource Specialist'],
-                'team_members': ['captaincook@gmail.com'],
-                'assigned_task': self.task3.id
+                'name': self.task_group3.name,
+                'suggested_positions': [self.human_resource_position.title],
+                'team_members': [self.admin_userprofile.email],
+                'assigned_task': None
             }
         ]
-        self.assertEqual(representation_data_list, expected_data)
 
-    def test_non_task_members_gets_restricted_representation(self):
+        # Sorting list by its dictionaries.
+        # lambda gets the ID of each dictionary wihin the list and orders
+        # the dictionaries by it.
+        # Now both representation and expected data can be compared
+        representation_data = sorted(
+            representation_data, key=lambda dict: dict.get('id', 0)
+        )
+        expected_data = sorted(
+            expected_data, key=lambda dict: dict.get('id', 0)
+        )
+
+        # Check if representation data contains all instances
+        self.assertEqual(representation_data, expected_data)
+
+    def test_non_task_group_members_gets_restricted_representation(self):
         """Tests if the to_representation method of the taskgroup serializer
         is preventing users from viewing tasks in which they are not a team
         member."""
 
-        self.client.force_authenticate(user=self.user3)
+        # Non-task group member
+        self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('taskgroup-list')
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
-        queryset = TaskGroup.objects.all()
+        queryset = models.TaskGroup.objects.all()
 
         serializer = TaskGroupSerializer(
             instance=queryset,
@@ -623,38 +640,68 @@ class TestTaskGroupModel(APITestCase):
         )
 
         representation_data = serializer.data
-        representation_data_list = [dict(item) for item in representation_data]
+
+        # Converting ordered_dict into regular dictionary so the different
+        # order of the key value pairs within the dictionaries
+        # of the representation_data and the expected_data wont throw a
+        # comparison error.
+        representation_data = [
+            dict(ordered_dict) for ordered_dict in representation_data
+        ]
 
         expected_data = [
             {},
+            {},
             {
-                'id': self.task_group3.id,
-                'name': 'The second TaskGroup',
-                'suggested_positions': ['Human Resource Specialist'],
-                'team_members': ['captaincook@gmail.com'],
-                'assigned_task': self.task3.id
+                'id': self.task_group1.id,
+                'name': self.task_group1.name,
+                'suggested_positions': [self.human_resource_position.title],
+                'team_members': [self.regular_userprofile.email],
+                'assigned_task': self.task1.id
             }
         ]
-        self.assertEqual(representation_data_list, expected_data)
+
+        # Sorting list by its dictionaries.
+        # lambda gets the ID of each dictionary wihin the list and orders
+        # the dictionaries by it.
+        # Now both representation and expected data can be compared
+        representation_data = sorted(
+            representation_data, key=lambda dict: dict.get('id', 0)
+        )
+        expected_data = sorted(
+            expected_data, key=lambda dict: dict.get('id', 0)
+        )
+
+        # Check if representation data contains all instances
+        self.assertEqual(representation_data, expected_data)
 
     def test_slug_related_fields_working(self):
         """Tests if the taskgroup serializer is correctly setting certain fields
         to a slug field."""
 
-        self.client.force_authenticate(user=self.user)
-        url = reverse('taskgroup-detail', args=[self.task_group.id])
+        # Authenticated user
+        self.client.force_authenticate(user=self.regular_user1)
+
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
         serializer = TaskGroupSerializer(
-            instance=self.task_group,
+            instance=self.task_group1,
             context={'request': request}
         )
 
         representation_data = serializer.data
+
+        # Converting ordered_dict into regular dictionary so the different
+        # order of the key value pairs within the dictionaries
+        # of the representation_data and the expected_data wont throw a
+        # comparison error.
+        representation_data = dict(representation_data)
+
         expected_data = {
-            'suggested_positions': ['Human Resource Specialist'],
-            'team_members': ['peterpahn@gmail.com']
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email]
         }
 
         # Checks if the slugfields are occupied with the correct values
@@ -667,120 +714,167 @@ class TestTaskGroupModel(APITestCase):
         handler."""
 
         # Connect the signal for the current test method
-        post_save.connect(create_task_group, sender=Task)
+        post_save.connect(signals.create_task_group, sender=models.Task)
 
-        self.user2.profile.position.is_task_manager = True
-        self.client.force_authenticate(user=self.user2)
+        # Task manager (Allowed to create task instances)
+        self.client.force_authenticate(user=self.regular_user1)
+
         url = reverse('task-list')
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
             'due_date': date(2023, 1, 15),
-            'category': self.category.name,
+            'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
         }
-
         response = self.client.post(url, data, format='json')
 
         # Checks if a taskgroup was created by the signal handler
         task_group_id = response.data["task_group"]
-        task_group = TaskGroup.objects.get(id=task_group_id)
-        self.assertIsNotNone(task_group)
+        task_group_instance = models.TaskGroup.objects.get(id=task_group_id)
+        self.assertIsNotNone(task_group_instance)
 
         # Checks if the taskgroup got assigned to the task by the signal handler
         task_id = response.data['id']
-        task = Task.objects.get(id=task_id)
-        self.assertEqual(task.task_group.id, task_group.id)
+        task_instance = models.Task.objects.get(id=task_id)
+        self.assertEqual(task_instance.task_group.id, task_group_instance.id)
 
     def test_task_group_is_not_created_and_assigned_to_task_when_already_set(self):
         """Tests if the taskgroup is not created and assigned by the signal
         handler when staff user already submitted one."""
 
         # Connect the signal for the current test method
-        post_save.connect(create_task_group, sender=Task)
+        post_save.connect(signals.create_task_group, sender=models.Task)
 
-        self.user2.is_staff = True
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
 
-        test_task_group = TaskGroup.objects.create(
-            name='The second TaskGroup'
+        # Create a task group instance
+        test_task_group = models.TaskGroup.objects.create(
+            name='The Test TaskGroup'
         )
-        test_task_group.suggested_positions.set([self.position])
-        test_task_group.team_members.set([self.userprofile2])
+        test_task_group.suggested_positions.set(
+            [self.human_resource_position]
+        )
+        test_task_group.team_members.set([self.regular_userprofile2])
 
-        self.client.force_authenticate(user=self.user2)
         url = reverse('task-list')
         data = {
-            'owner': self.user.email,
+            'owner': self.regular_user1.email,
             'title': 'The first Task',
             'description': 'The task to be tested.',
             'due_date': date(2023, 1, 15),
-            'category': self.category.name,
+            'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
             'task_group': test_task_group.id,
         }
-
         response = self.client.post(url, data, format='json')
 
+        # Check if the task group set in the data is the same as in the task
+        # instance retrieved from the database.
         task_id = response.data['id']
-        task = Task.objects.get(id=task_id)
-        self.assertEqual(task.task_group.id, test_task_group.id)
+        task_instance = models.Task.objects.get(id=task_id)
+        self.assertEqual(task_instance.task_group.id, test_task_group.id)
 
     def test_suggested_positions_get_assigned_to_task_group(self):
-        """Tests if the suggested positions and team members are getting
-        assigned o the task group by the signal handler."""
+        """Tests if the task owner gets assigned as a team member of the
+        task group, and 4 positions related with the task category get
+        assigned to the suggested_positions of the task group by the signal
+        handler."""
 
         # Connect the signal for the current test method
-        post_save.connect(create_task_group, sender=Task)
+        post_save.connect(signals.create_task_group, sender=models.Task)
 
-        self.client.force_authenticate(user=self.user2)
-        self.user2.profile.position.is_task_manager = True
+        # Task manager (Allowed to create task instances)
+        self.client.force_authenticate(user=self.regular_user1)
+
+        # Creating position instances
+        # Only 4 should be found in the actual data dictionary further down.
+        # One of them is the self.human_resource_position created within the
+        # setup. The fifth is expected to not be present in the actual data.
+        human_resource_position2 = models.Position.objects.create(
+            title='Human Resource Position 2',
+            description='''A dummy position instance for testing purposes''',
+            is_task_manager=True,
+            related_category=self.human_resource_category,
+        )
+        human_resource_position3 = models.Position.objects.create(
+            title='Human Resource Position 3',
+            description='''A dummy position instance for testing purposes''',
+            is_task_manager=True,
+            related_category=self.human_resource_category,
+        )
+        human_resource_position4 = models.Position.objects.create(
+            title='Human Resource Position 4',
+            description='''A dummy position instance for testing purposes''',
+            is_task_manager=True,
+            related_category=self.human_resource_category,
+        )
+        human_resource_position5 = models.Position.objects.create(
+            title='Human Resource Position 5',
+            description='''A dummy position instance for testing purposes''',
+            is_task_manager=True,
+            related_category=self.human_resource_category,
+        )
+
+        # Sending a post request to create a new task instance to trigger
+        # the signal handler for he creation of a task group for the task
+        # instance.
         url = reverse('task-list')
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
             'due_date': date(2023, 1, 15),
-            'category': self.category.name,
+            'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
         }
-
         response = self.client.post(url, data, format='json')
 
+        # Retrieving the by the signal handler created and assigned
+        # task group.
         task_id = response.data['id']
-        task_group = TaskGroup.objects.get(assigned_task=task_id)
+        task_group_instance = models.TaskGroup.objects.get(
+            assigned_task=task_id
+        )
 
+        # Retrieving the positions and team members from the newly created
+        # task group (by the signal handler) to create 2 lists that can
+        # occupy the suggested_positions and team_members field of the actual
+        # data dictionary so a comparison can be made with the expected data
+        # dictionary.
         positions = []
-        members = []
-
-        for position in task_group.suggested_positions.all():
+        team_members = []
+        for position in task_group_instance.suggested_positions.all():
             positions.append(position.title)
+        for member in task_group_instance.team_members.all():
+            team_members.append(member.email)
 
-        for member in task_group.team_members.all():
-            members.append(member.email)
-
+        # The prepared actual data to be compared
         actual_data = {
-            'id': task_group.id,
-            'name': task_group.name,
+            'id': task_group_instance.id,
+            'name': task_group_instance.name,
             'suggested_positions': positions,
-            'team_members': members,
+            'team_members': team_members,
             'assigned_task': task_id
         }
 
+        # The expected data to be compared
         expected_data = {
-            'id': task_group.id,
-            # 'TaskGroup of' gets added by the signal handler
-            'name': 'TaskGroup of The first Task',
+            'id': task_group_instance.id,
+            'name': task_group_instance.name,
             'suggested_positions': [
-                self.position.title,
-                self.position2.title,
-                self.position3.title,
-                self.position4.title,
-                self.position5.title
+                self.human_resource_position.title,
+                human_resource_position2.title,
+                human_resource_position3.title,
+                human_resource_position4.title,
             ],
-            'team_members': [self.userprofile2.email],
+            'team_members': [self.regular_userprofile.email],
             'assigned_task': task_id
         }
 
+        # Check if the suggested_positions/team_members got assigned
+        # correctly.
         self.assertEqual(actual_data, expected_data)

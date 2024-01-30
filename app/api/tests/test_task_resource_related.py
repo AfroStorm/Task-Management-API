@@ -451,7 +451,7 @@ class TestsTaskResourceModel(APITestCase):
         representation_data = serializer.data
 
         # Converting ordered_dict into regular dictionary so the different
-        # order of the key value pairs belonging to the dictionaries
+        # order of the key value pairs within the dictionaries
         # of the representation_data and the expected_data wont throw a
         # comparison error.
         representation_data = [
@@ -533,7 +533,7 @@ class TestsTaskResourceModel(APITestCase):
         representation_data = serializer.data
 
         # Converting ordered_dict into regular dictionary so the different
-        # order of the key value pairs belonging to the dictionaries
+        # order of the key value pairs within the dictionaries
         # of the representation_data and the expected_data wont throw a
         # comparison error.
         representation_data = [

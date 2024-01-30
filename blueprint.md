@@ -68,7 +68,6 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar
 
-- Maybe restructure or brush up the tests (make them consice and omit redundancies).
-Continue the modification of the taskresource serializer.
-After tht continue the tests for task resources.
+- Restructure the tests and the actual code (make them consice, intuitive and omit redundancies).
+
 - after restructuring the tests do a final check for any typos or grammatical errors

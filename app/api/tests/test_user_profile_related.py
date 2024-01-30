@@ -526,7 +526,7 @@ class TestUserProfileModel(APITestCase):
         user_instance = User.objects.get(id=user_id)
         self.assertEqual(profile_instance.email, user_instance.email)
 
-    def test_user_profile_is_not_created_and_assigned_when_already_set(self):
+    def test_user_profile_gets_not_created_and_assigned_when_already_set(self):
         """Tests if the userprofile doesnt get created and assigned by the
         signal handler after a new user was created if its already set by the
         staff user."""

@@ -47,7 +47,7 @@ def create_task_group(sender, instance, created, **kwargs):
         if instance.category:
             positions = Position.objects.filter(
                 related_category=instance.category
-            ).distinct().order_by('title')[:5]
+            ).distinct().order_by('id')[:4]
 
             task_group.suggested_positions.add(*positions)
 
