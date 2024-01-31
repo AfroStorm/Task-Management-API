@@ -16,7 +16,7 @@ class TestTaskGroupModel(APITestCase):
 
     def setUp(self) -> None:
         '''The creation of the following instances are necessary to test the
-        task group view nd eventual serializer, signal handler etc.'''
+        task group view and eventual serializer, signal handler etc.'''
 
         # Deactivate signal handlers for more control over setUp instances
         post_save.disconnect(signals.create_or_update_profile, sender=User)
@@ -62,7 +62,7 @@ class TestTaskGroupModel(APITestCase):
             recruitment, employee relations, benefits administration, and
             workforce planning, ensuring effective management of human
             resources within an organization.''',
-            is_task_manager=True,
+            is_task_manager=False,
             related_category=self.human_resource_category,
         )
 
@@ -146,7 +146,7 @@ class TestTaskGroupModel(APITestCase):
         # Authenticated user
         self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('task-list')
+        url = reverse('taskgroup-list')
         response = self.client.get(url)
 
         # Check if access is granted
@@ -157,7 +157,7 @@ class TestTaskGroupModel(APITestCase):
 
         # Unauthenticated user
 
-        url = reverse('task-list')
+        url = reverse('taskgroup-list')
         response = self.client.get(url)
 
         # Check if access is denied
@@ -171,8 +171,8 @@ class TestTaskGroupModel(APITestCase):
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse(
-            'task-detail',
-            args=[self.task1.id]
+            'taskgroup-detail',
+            args=[self.task_group1.id]
         )
         response = self.client.get(url)
 
@@ -186,8 +186,8 @@ class TestTaskGroupModel(APITestCase):
         # Unauthenticated user
 
         url = reverse(
-            'task-detail',
-            args=[self.task1.id]
+            'taskgroup-detail',
+            args=[self.task_group1.id]
         )
         response = self.client.get(url)
 
@@ -282,43 +282,6 @@ class TestTaskGroupModel(APITestCase):
         # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # Destroy view
-    def test_staff_can_access_destroy(self):
-        """Tests if the destroy view action allows staff users."""
-
-        # Staff user
-        self.client.force_authenticate(user=self.admin_user)
-
-        url = reverse('taskgroup-detail', args=[self.task_group3.id])
-        response = self.client.delete(url)
-
-        # Check if access is granted
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-    def test_non_staff_cant_access_destroy(self):
-        """Tests if the destroy view action disallows non staff users."""
-
-        # Non-staff user
-        self.client.force_authenticate(user=self.regular_user1)
-
-        url = reverse('taskgroup-detail', args=[self.task_group1.id])
-        response = self.client.delete(url)
-
-        # Check if access is denied
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_unauthenticated_cant_access_destroy(self):
-        """Tests if the destroy view action disallows unauthenticated
-        users."""
-
-        # Unauthenticated user
-
-        url = reverse('taskgroup-detail', args=[self.task_group1.id])
-        response = self.client.delete(url)
-
-        # Check if access is denied
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
     # Update view
     def test_staff_can_access_update(self):
         """Tests if the update view action allows staff users."""
@@ -338,24 +301,6 @@ class TestTaskGroupModel(APITestCase):
         # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_staff_cant_access_update(self):
-        """Tests if the update view action allows staff users."""
-
-        # Non-staff user
-        self.client.force_authenticate(user=self.regular_user1)
-
-        url = reverse('taskgroup-detail', args=[self.task_group2.id])
-        data = {
-            'name': 'Updated task group',
-            'suggested_positions': [self.human_resource_position.title],
-            'team_members': [self.regular_userprofile.email],
-            'assigned_task': self.task2.id
-        }
-        response = self.client.put(url, data, format='json')
-
-        # Check if access is denied
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
     def test_owner_can_access_update(self):
         """Tests if the update view action allows task owner."""
 
@@ -373,6 +318,24 @@ class TestTaskGroupModel(APITestCase):
 
         # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_non_staff_cant_access_update(self):
+        """Tests if the update view action disallows staff users."""
+
+        # Non-staff user who's also not the object owner
+        self.client.force_authenticate(user=self.regular_user1)
+
+        url = reverse('taskgroup-detail', args=[self.task_group2.id])
+        data = {
+            'name': 'Updated task group',
+            'suggested_positions': [self.human_resource_position.title],
+            'team_members': [self.regular_userprofile.email],
+            'assigned_task': self.task2.id
+        }
+        response = self.client.put(url, data, format='json')
+
+        # Check if access is denied
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_non_owner_cant_access_update(self):
         """Tests if the update view action disallows non owner."""
@@ -494,6 +457,43 @@ class TestTaskGroupModel(APITestCase):
         # Check if access is denied
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    # Destroy view
+    def test_staff_can_access_destroy(self):
+        """Tests if the destroy view action allows staff users."""
+
+        # Staff user
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = reverse('taskgroup-detail', args=[self.task_group3.id])
+        response = self.client.delete(url)
+
+        # Check if access is granted
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_non_staff_cant_access_destroy(self):
+        """Tests if the destroy view action disallows non staff users."""
+
+        # Non-staff user
+        self.client.force_authenticate(user=self.regular_user1)
+
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
+        response = self.client.delete(url)
+
+        # Check if access is denied
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_cant_access_destroy(self):
+        """Tests if the destroy view action disallows unauthenticated
+        users."""
+
+        # Unauthenticated user
+
+        url = reverse('taskgroup-detail', args=[self.task_group1.id])
+        response = self.client.delete(url)
+
+        # Check if access is denied
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     # Serializer
     def test_fields_read_only_staff_user(self):
         """Tests if the get_fields method of the taskserializer is setting
@@ -573,14 +573,6 @@ class TestTaskGroupModel(APITestCase):
 
         representation_data = serializer.data
 
-        # Converting ordered_dict into regular dictionary so the different
-        # order of the key value pairs within the dictionaries
-        # of the representation_data and the expected_data wont throw a
-        # comparison error.
-        representation_data = [
-            dict(ordered_dict) for ordered_dict in representation_data
-        ]
-
         expected_data = [
             {
                 'id': self.task_group1.id,
@@ -624,7 +616,7 @@ class TestTaskGroupModel(APITestCase):
         is preventing users from viewing tasks in which they are not a team
         member."""
 
-        # Non-task group member
+        # Authenticated user
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('taskgroup-list')
@@ -640,14 +632,6 @@ class TestTaskGroupModel(APITestCase):
         )
 
         representation_data = serializer.data
-
-        # Converting ordered_dict into regular dictionary so the different
-        # order of the key value pairs within the dictionaries
-        # of the representation_data and the expected_data wont throw a
-        # comparison error.
-        representation_data = [
-            dict(ordered_dict) for ordered_dict in representation_data
-        ]
 
         expected_data = [
             {},
@@ -717,6 +701,7 @@ class TestTaskGroupModel(APITestCase):
         post_save.connect(signals.create_task_group, sender=models.Task)
 
         # Task manager (Allowed to create task instances)
+        self.regular_user1.profile.position.is_task_manager = True
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-list')
@@ -788,6 +773,7 @@ class TestTaskGroupModel(APITestCase):
         post_save.connect(signals.create_task_group, sender=models.Task)
 
         # Task manager (Allowed to create task instances)
+        self.regular_user1.profile.position.is_task_manager = True
         self.client.force_authenticate(user=self.regular_user1)
 
         # Creating position instances

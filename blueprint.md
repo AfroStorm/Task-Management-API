@@ -69,5 +69,6 @@ This project provides a good balance of CRUD operations, user authentication, an
 - Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar
 
 - Restructure the tests and the actual code (make them consice, intuitive and omit redundancies).
+- Remove the conversion from ordered to regular dict within the serializer tests of all tests, keep sorting algorythm though.
 
 - after restructuring the tests do a final check for any typos or grammatical errors

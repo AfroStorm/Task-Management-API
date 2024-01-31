@@ -334,7 +334,7 @@ class TestUserProfileModel(APITestCase):
         # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_owner_and_non_staff_cant_access_partial_update(self):
+    def test_non_staff_and_non_owner_cant_access_partial_update(self):
         """Tests if the partial update view action disallows non owner and
         non staff users."""
 

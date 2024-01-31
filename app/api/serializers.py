@@ -246,12 +246,9 @@ class TaskSerializer(serializers.ModelSerializer):
             return data
 
         elif hasattr(instance.task_group, 'team_members'):
-            if request.user.profile in \
+            if request.user.profile not in\
                     instance.task_group.team_members.all():
 
-                return data
-
-            else:
                 return {}
 
         # For newly created instances

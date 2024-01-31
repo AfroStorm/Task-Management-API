@@ -11,7 +11,11 @@ User = get_user_model()
 
 
 class NotifyDueDatesTest(TestCase):
+    """Tests that are related to the django cronjobs."""
+
     def setUp(self):
+        '''The creation of the following instances are necessary to test the
+        django cronjobs.'''
 
         # Deactivate signal handlers
         post_save.disconnect(signals.create_task_group, sender=models.Task)
