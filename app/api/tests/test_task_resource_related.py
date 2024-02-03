@@ -437,7 +437,7 @@ class TestsTaskResourceModel(APITestCase):
         # Staff User
         self.client.force_authenticate(user=self.admin_user)
 
-        url = reverse('task-list')
+        url = reverse('taskresource-list')
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
@@ -511,7 +511,7 @@ class TestsTaskResourceModel(APITestCase):
         # non-staff User
         self.client.force_authenticate(user=self.regular_user1)
 
-        url = reverse('task-list')
+        url = reverse('taskresource-list')
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 

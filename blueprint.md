@@ -66,9 +66,10 @@ This project provides a good balance of CRUD operations, user authentication, an
 - Think about creating custom view actions to modify instances.
 - Maybe add a pdf generator
 
-- Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar
+- Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar.
 
-- Restructure the tests and the actual code (make them consice, intuitive and omit redundancies).
-- Remove the conversion from ordered to regular dict within the serializer tests of all tests, keep sorting algorythm though.
+- Restructure the serilizers and signal handlers (make them consice, intuitive and omit redundancies).
 
-- after restructuring the tests do a final check for any typos or grammatical errors
+- Create an api documentation for the project.
+
+- after restructuring the tests/code do a final check for any typos or grammatical errors.

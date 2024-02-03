@@ -199,7 +199,7 @@ class TaskSerializer(serializers.ModelSerializer):
         queryset=models.Status.objects.all(),
         slug_field='caption'
     )
-    task_resource = serializers.SlugRelatedField(
+    resource_collection = serializers.SlugRelatedField(
         queryset=models.TaskResource.objects.all(),
         many=True,
         slug_field='title',
@@ -210,7 +210,7 @@ class TaskSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = [
             'id', 'title', 'description', 'due_date', 'category', 'priority',
-            'status', 'owner', 'task_group', 'task_resource'
+            'status', 'owner', 'task_group', 'resource_collection'
         ]
         extra_kwargs = {
             'task_group': {'required': False}

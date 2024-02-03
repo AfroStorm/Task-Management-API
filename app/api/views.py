@@ -220,8 +220,6 @@ class TaskView(ModelViewSet):
                 self.action == 'retrieve':
             permission_classes = [IsAuthenticated]
 
-        # Only admin or authenticated user with a position that has
-        # is_task_manager true can create
         elif self.action == 'create':
             permission_classes = [IsAdminUser | permissions.IsTaskManager]
 

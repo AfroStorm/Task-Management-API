@@ -608,6 +608,7 @@ class TestTaskModel(APITestCase):
         )
 
         representation_data = serializer.data
+        representation_data = [dict(item) for item in representation_data]
 
         expected_data = [
             {
@@ -617,6 +618,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
+                'resource_collection': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -628,6 +630,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task2.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
+                'resource_collection': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile2.email),
                 'task_group': self.task_group2.id,
@@ -657,6 +660,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': 'wrong',
+                'resource_collection': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -701,6 +705,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
+                'resource_collection': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -729,6 +734,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
+                'resource_collection': [],
                 'status': 'wrong',
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -740,6 +746,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task2.due_date),
                 'category': self.human_resource_category.name,
                 'priority': 'wrong',
+                'resource_collection': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group2.id,
