@@ -4,18 +4,24 @@ from api import models
 from rest_framework.exceptions import ValidationError
 from django.db.models.query import QuerySet
 
-
 User = get_user_model()
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    """Serializes the CustomUser model."""
+    """
+    Serializer for the CustomUser model.
+
+    This serializer is designed to handle the User model with custom behavior
+    such as read-only profile for non-staff users and password input styling.
+
+    Attributes:
+        password: A write-only field with password input styling.
+        profile: An optional field for user profile information.
+    """
 
     class Meta:
         model = User
-        fields = [
-            'email', 'id', 'profile', 'password'
-        ]
+        fields = ['email', 'id', 'profile', 'password']
         extra_kwargs = {
             'password': {
                 'write_only': True,
@@ -25,23 +31,28 @@ class CustomUserSerializer(serializers.ModelSerializer):
         }
 
     def get_fields(self):
-        """Prevents non-staff users from manually changing certain fields
-        (profile)."""
+        """
+        Get the fields for the serializer.
+
+        Returns:
+            dict: A dictionary of fields for the serializer with read-only
+            profile for non-staff users.
+        """
 
         request = self.context['request']
         fields = super().get_fields()
 
         if request.user.is_staff:
             return fields
-
         else:
             fields['profile'].read_only = True
-
             return fields
 
 
 class PrioritySerializer(serializers.ModelSerializer):
-    """Serializes the Priority model."""
+    """
+    Serializer for the Priority model.
+    """
 
     class Meta:
         model = models.Priority
@@ -49,7 +60,9 @@ class PrioritySerializer(serializers.ModelSerializer):
 
 
 class StatusSerializer(serializers.ModelSerializer):
-    """Serializes the Status model."""
+    """
+    Serializer for the Status model.
+    """
 
     class Meta:
         model = models.Status
@@ -57,7 +70,9 @@ class StatusSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Serializes the Category model."""
+    """
+    Serializer for the Category model.
+    """
 
     class Meta:
         model = models.Category
@@ -65,7 +80,13 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class PositionSerializer(serializers.ModelSerializer):
-    """Serializes the Position model."""
+    """
+    Serializer for the Position model.
+
+    Attributes:
+        related_category: A slug-related field representing the related category.
+    """
+
     related_category = serializers.SlugRelatedField(
         queryset=models.Category.objects.all(),
         slug_field='name'
@@ -77,7 +98,15 @@ class PositionSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Serializes the UserProfile model."""
+    """
+    Serializer for the UserProfile model.
+
+    This serializer is designed to handle the UserProfile model with custom
+    behavior such as read-only fields for non-staff users.
+
+    Attributes:
+        owner: A slug-related field representing the owner of the profile.
+    """
 
     owner = serializers.SlugRelatedField(
         queryset=User.objects.all(),
@@ -97,14 +126,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
 
     def get_fields(self):
-        """Prevents non staff users from modifying certain fields."""
+        """
+        Get the fields for the serializer.
+
+        Returns:
+            dict: A dictionary of fields for the serializer with read-only
+            fields for non-staff users.
+        """
 
         request = self.context['request']
         fields = super().get_fields()
 
         if request.user.is_staff:
             return fields
-
         else:
             read_only_fields = ['owner', 'task_group', 'tasks_to_manage']
             for field in read_only_fields:
@@ -114,7 +148,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class TaskGroupSerializer(serializers.ModelSerializer):
-    """Serializes the TaskGroup model."""
+    """
+    Serializer for the TaskGroup model.
+
+    This serializer handles the TaskGroup model with custom behavior such as
+    read-only fields for non-staff users and non-owners.
+
+    Attributes:
+        suggested_positions: A slug-related field representing suggested positions.
+        team_members: A slug-related field representing team members.
+    """
 
     suggested_positions = serializers.SlugRelatedField(
         queryset=models.Position.objects.all(),
@@ -133,7 +176,10 @@ class TaskGroupSerializer(serializers.ModelSerializer):
                   'team_members', 'assigned_task']
 
     def get_fields(self):
-        """Prevents non-staff users and non-owners from modifying certain fields."""
+        """
+        Prevents non-staff users and non-owners from modifying certain
+        fields.
+        """
 
         request = self.context.get('request')
         fields = super().get_fields()
@@ -143,26 +189,20 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
         # Checks if self.instance is a query set
         elif isinstance(self.instance, QuerySet):
-            # Checks if the request user profile is the owner of the assigned task of the task group
-            for obj in self.instance:
-                if hasattr(obj.assigned_task, 'owner') and \
-                        request.user.profile == obj.assigned_task.owner:
-                    fields['assigned_task'].read_only = True
+            queryset = self.instance
 
-                    return fields
+            for instance in queryset:
+                return self.check_ownership(instance, request, fields)
 
-        # Checks if its a single instance
-        elif hasattr(self.instance.assigned_task, 'owner') and \
-                request.user.profile == self.instance.assigned_task.owner:
-            fields['assigned_task'].read_only = True
-
-            return fields
-
-        return {}
+        # In case it's not a query set
+        else:
+            return self.check_ownership(self.instance, request, fields)
 
     def to_representation(self, instance):
-        """Prevents non-staff users from viewing tasks in which they are not
-        included."""
+        """
+        Prevents non-staff users from viewing tasks in which they are not
+        included.
+        """
 
         request = self.context['request']
         data = super().to_representation(instance)
@@ -178,9 +218,36 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
         return data
 
+    def check_ownership(self, instance, request, fields):
+        """
+        Checks if the request.user.profile is a team member of the task group.
+        """
+        if hasattr(instance.assigned_task, 'owner'):
+            if request.user.profile == instance.assigned_task.owner:
+                fields['assigned_task'].read_only = True
+
+                return fields
+
+            # In case the taskgroup just got created, not having an assigned task
+            return {}
+
 
 class TaskSerializer(serializers.ModelSerializer):
-    """Serializes the Task model."""
+    """
+    Serializer for the Task model.
+
+    This serializer handles the Task model with custom behavior such as
+    read-only fields for non-staff users and restrictions on visibility
+    based on team membership.
+
+    Attributes:
+        owner: A slug-related field representing the owner of the task.
+        category: A slug-related field representing the category of the task.
+        priority: A slug-related field representing the priority of the task.
+        status: A slug-related field representing the status of the task.
+        resource_collection: A slug-related field representing the resources
+                             associated with the task.
+    """
 
     owner = serializers.SlugRelatedField(
         queryset=models.UserProfile.objects.all(),
@@ -217,7 +284,7 @@ class TaskSerializer(serializers.ModelSerializer):
         }
 
     def get_fields(self):
-        """Sets certain fields to read_only for non staff users."""
+        """Sets certain fields to read_only for non-staff users."""
 
         request = self.context.get('request')
         fields = super().get_fields()
@@ -256,7 +323,20 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class TaskResourceSerializer(serializers.ModelSerializer):
-    """Serializes the TaskResource model."""
+    """
+    Serializer for the TaskResource model.
+
+    This serializer handles the TaskResource model with custom behavior such as
+    validation to ensure the user is a team member of the selected task and
+    restrictions on visibility based on team membership.
+
+    Attributes:
+        id: The identifier for the TaskResource.
+        source_name: The name of the source associated with the resource.
+        description: A description of the resource.
+        resource_link: The link to the resource.
+        task: A reference to the associated task.
+    """
 
     class Meta:
         model = models.TaskResource
@@ -265,32 +345,40 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        """Validate that the user is a team member of the selected task."""
+        """
+        Validate that the user is a team member of the selected task.
+
+        This method checks if the user is a team member of the task associated
+        with the submitted data. Staff users are exempt from this validation.
+        """
 
         request = self.context['request']
 
         if request.user.is_staff:
             return data
 
-        # Check if its updated or created, in case of a partial update that
-        # excludes a new task instance from the submitted data, no
-        # team member check is required.
+        # Check if it's an update or create operation
         if 'task' in data:
             task_instance = data['task']
-            # Check if the user is a team member of the selected task
-            if request.user.profile not in\
-                    task_instance.task_group.team_members.all():
 
+            # Check if the user is a team member of the selected task
+            if request.user.profile not in task_instance.task_group.team_members.all():
                 raise ValidationError(
-                    '''The request user is not a member of the selected task's
+                    '''The requesting user is not a member of the selected task's
                     team.'''
                 )
 
         return data
 
     def to_representation(self, instance):
-        """Restricts users from seeing task resources of tasks in which
-        they are not a team member, except for staff users.."""
+        """
+        Restricts users from seeing task resources of tasks in which
+        they are not a team member, except for staff users.
+
+        This method ensures that only team members of the associated task can
+        view the task resources, except for staff users who have unrestricted
+        access.
+        """
 
         request = self.context['request']
         data = super().to_representation(instance)
