@@ -43,9 +43,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
 
         if request.user.is_staff:
+
             return fields
+
         else:
             fields['profile'].read_only = True
+
             return fields
 
 
@@ -187,16 +190,11 @@ class TaskGroupSerializer(serializers.ModelSerializer):
         if request and request.user.is_staff:
             return fields
 
-        # Checks if self.instance is a query set
-        elif isinstance(self.instance, QuerySet):
-            queryset = self.instance
-
-            for instance in queryset:
-                return self.check_ownership(instance, request, fields)
-
-        # In case it's not a query set
+        # Request user is object owner
         else:
-            return self.check_ownership(self.instance, request, fields)
+            fields['assigned_task'].read_only = True
+
+            return fields
 
     def to_representation(self, instance):
         """
@@ -210,26 +208,13 @@ class TaskGroupSerializer(serializers.ModelSerializer):
         if request.user.is_staff:
             return data
 
-        # If the UserProfile is not a member of the task group.
-        elif request.user.profile not in \
-                instance.team_members.all():
+        # If the request user profile is a team member of the task group.
+        elif request.user.profile in instance.team_members.all():
 
-            return {}
+            return data
 
-        return data
-
-    def check_ownership(self, instance, request, fields):
-        """
-        Checks if the request.user.profile is a team member of the task group.
-        """
-        if hasattr(instance.assigned_task, 'owner'):
-            if request.user.profile == instance.assigned_task.owner:
-                fields['assigned_task'].read_only = True
-
-                return fields
-
-            # In case the taskgroup just got created, not having an assigned task
-            return {}
+        # For newly created instances
+        return None
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -289,18 +274,14 @@ class TaskSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         fields = super().get_fields()
 
-        # Staff users have no restrictions
-        if hasattr(request, 'user'):
-            if request.user.is_staff:
-                return fields
+        if request.user.is_staff:
+            return fields
 
-            else:
-                fields['task_group'].read_only = True
-                fields['owner'].read_only = True
+        else:
+            fields['task_group'].read_only = True
+            fields['owner'].read_only = True
 
-                return fields
-
-        return {}
+            return fields
 
     def to_representation(self, instance):
         """Restricts users from seeing tasks in which they are not a team
@@ -312,14 +293,19 @@ class TaskSerializer(serializers.ModelSerializer):
         if request.user.is_staff:
             return data
 
-        elif hasattr(instance.task_group, 'team_members'):
-            if request.user.profile not in\
+        # Check for newly created instances
+        elif not hasattr(instance.task_group, 'team_members'):
+            return data
+
+        # Not newly created
+        else:
+            if request.user.profile in\
                     instance.task_group.team_members.all():
 
-                return {}
+                return data
 
         # For newly created instances
-        return data
+        return None
 
 
 class TaskResourceSerializer(serializers.ModelSerializer):
@@ -362,7 +348,8 @@ class TaskResourceSerializer(serializers.ModelSerializer):
             task_instance = data['task']
 
             # Check if the user is a team member of the selected task
-            if request.user.profile not in task_instance.task_group.team_members.all():
+            if request.user.profile not in\
+                    task_instance.task_group.team_members.all():
                 raise ValidationError(
                     '''The requesting user is not a member of the selected task's
                     team.'''
@@ -383,10 +370,14 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         request = self.context['request']
         data = super().to_representation(instance)
 
-        if request.user.is_staff or request.user.profile\
+        if request.user.is_staff:
+
+            return data
+
+        elif request.user.profile\
                 in instance.task.task_group.team_members.all():
 
             return data
 
         else:
-            return {}
+            return None

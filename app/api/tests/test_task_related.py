@@ -130,6 +130,18 @@ class TestTaskModel(APITestCase):
             task_group=self.task_group2
         )
 
+    # Helper functions
+    def get_id(self, i):
+        """
+        Gets the id of a dictionary. If (i) is None returns 0 instead.
+        Is used together with a lambda function in this test.
+        """
+
+        if i == None:
+            return 0
+        else:
+            return i.get('id')
+
     # List view
     def test_authenticated_user_can_access_list(self):
         """Tests if the list view action allows authenticated users."""
@@ -638,21 +650,22 @@ class TestTaskModel(APITestCase):
         ]
 
         # Sorting list by its dictionaries.
-        # lambda gets the ID of each dictionary wihin the list and orders
-        # the dictionaries by it.
-        # Now both representation and expected data can be compared
+        # lambda gets the ID of each dictionary wihin the list and provides it
+        # as a value for the key parameter of the sorted function. By that
+        # the order of the dictionaries of both lists is identical. Now both
+        # representation and expected data list can be compared.
         representation_data = sorted(
-            representation_data, key=lambda dict: dict.get('id', 0)
+            representation_data, key=lambda i: self.get_id(i)
         )
         expected_data = sorted(
-            expected_data, key=lambda dict: dict.get('id', 0)
+            expected_data, key=lambda i: self.get_id(i)
         )
 
         # Check if representation data contains all instances
         self.assertEqual(representation_data, expected_data)
 
         false_data = [
-            {},
+            None,
             {
                 'id': self.task1.id,
                 'title': self.task1.title,
@@ -669,7 +682,7 @@ class TestTaskModel(APITestCase):
 
         # Look further up in function for explanation
         false_data = sorted(
-            false_data, key=lambda dict: dict.get('id', 0)
+            false_data, key=lambda i: self.get_id(i)
         )
 
         # Double-check with purposely wrong data
@@ -697,7 +710,7 @@ class TestTaskModel(APITestCase):
         representation_data = serializer.data
 
         expected_data = [
-            {},
+            None,
             {
                 'id': self.task1.id,
                 'title': self.task1.title,
@@ -713,14 +726,15 @@ class TestTaskModel(APITestCase):
         ]
 
         # Sorting list by its dictionaries.
-        # lambda gets the ID of each dictionary wihin the list and orders
-        # the dictionaries by it.
-        # Now both representation and expected data can be compared
+        # lambda gets the ID of each dictionary wihin the list and provides it
+        # as a value for the key parameter of the sorted function. By that
+        # the order of the dictionaries of both lists is identical. Now both
+        # representation and expected data list can be compared.
         representation_data = sorted(
-            representation_data, key=lambda dict: dict.get('id', 0)
+            representation_data, key=lambda i: self.get_id(i)
         )
         expected_data = sorted(
-            expected_data, key=lambda dict: dict.get('id', 0)
+            expected_data, key=lambda i: self.get_id(i)
         )
 
         # Check if representation data contains only team member instances
@@ -755,7 +769,7 @@ class TestTaskModel(APITestCase):
 
         # Look further up in function for explanation
         false_data = sorted(
-            false_data, key=lambda dict: dict.get('id', 0)
+            false_data, key=lambda i: self.get_id(i)
         )
 
         # Double-check with purposely wrong data

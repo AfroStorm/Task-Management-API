@@ -70,8 +70,9 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - Restructure the serilizers and signal handlers (make them consice, intuitive and omit redundancies).
 
-- Create an api documentation for the project.
+- Change the to representation return value from {} to None (safes memory).
+Try to figure out the logic of the conditionals in the to representation method (whats happening and why).
 
+- Create an api documentation for the project.
 - after restructuring the tests/code do a final check for any typos or grammatical errors.
 
-- Create a seperatehelper function to check serializers line 192 and 199
