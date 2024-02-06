@@ -42,7 +42,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         request = self.context['request']
         fields = super().get_fields()
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
 
             return fields
 
@@ -87,10 +87,10 @@ class PositionSerializer(serializers.ModelSerializer):
     Serializer for the Position model.
 
     Attributes:
-        related_category: A slug-related field representing the related category.
+        category: A slug-related field representing the related category.
     """
 
-    related_category = serializers.SlugRelatedField(
+    category = serializers.SlugRelatedField(
         queryset=models.Category.objects.all(),
         slug_field='name'
     )
@@ -114,18 +114,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
     owner = serializers.SlugRelatedField(
         queryset=User.objects.all(),
         slug_field='email',
-        required=False
     )
 
     class Meta:
         model = models.UserProfile
         fields = [
             'id', 'owner', 'first_name', 'last_name', 'phone_number', 'email',
-            'position', 'task_group', 'tasks_to_manage'
+            'position', 'taskgroup_set', 'task_set'
         ]
         extra_kwargs = {
-            'task_group': {'required': False},
-            'tasks_to_manage': {'required': False},
+            'taskgroup_set': {'required': False},
+            'task_set': {'required': False},
         }
 
     def get_fields(self):
@@ -140,14 +139,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         request = self.context['request']
         fields = super().get_fields()
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
             return fields
+
         else:
-            read_only_fields = ['owner', 'task_group', 'tasks_to_manage']
+            read_only_fields = ['owner', 'taskgroup_set', 'task_set']
+
             for field in read_only_fields:
                 fields[field].read_only = True
 
-        return fields
+            return fields
 
 
 class TaskGroupSerializer(serializers.ModelSerializer):
@@ -175,24 +176,25 @@ class TaskGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.TaskGroup
-        fields = ['id', 'name', 'suggested_positions',
-                  'team_members', 'assigned_task']
+        fields = [
+            'id', 'name', 'suggested_positions', 'team_members',
+            'task'
+        ]
 
     def get_fields(self):
         """
-        Prevents non-staff users and non-owners from modifying certain
-        fields.
+        Prevents non-staff users from modifying certain fields.
         """
 
         request = self.context.get('request')
         fields = super().get_fields()
 
         if request and request.user.is_staff:
+
             return fields
 
-        # Request user is object owner
         else:
-            fields['assigned_task'].read_only = True
+            fields['task'].read_only = True
 
             return fields
 
@@ -205,16 +207,14 @@ class TaskGroupSerializer(serializers.ModelSerializer):
         request = self.context['request']
         data = super().to_representation(instance)
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
+
             return data
 
         # If the request user profile is a team member of the task group.
         elif request.user.profile in instance.team_members.all():
 
             return data
-
-        # For newly created instances
-        return None
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -230,7 +230,7 @@ class TaskSerializer(serializers.ModelSerializer):
         category: A slug-related field representing the category of the task.
         priority: A slug-related field representing the priority of the task.
         status: A slug-related field representing the status of the task.
-        resource_collection: A slug-related field representing the resources
+        task_resource_set: A slug-related field representing the resources
                              associated with the task.
     """
 
@@ -251,7 +251,7 @@ class TaskSerializer(serializers.ModelSerializer):
         queryset=models.Status.objects.all(),
         slug_field='caption'
     )
-    resource_collection = serializers.SlugRelatedField(
+    taskresource_set = serializers.SlugRelatedField(
         queryset=models.TaskResource.objects.all(),
         many=True,
         slug_field='title',
@@ -262,7 +262,7 @@ class TaskSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = [
             'id', 'title', 'description', 'due_date', 'category', 'priority',
-            'status', 'owner', 'task_group', 'resource_collection'
+            'status', 'owner', 'task_group', 'taskresource_set'
         ]
         extra_kwargs = {
             'task_group': {'required': False}
@@ -274,7 +274,7 @@ class TaskSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         fields = super().get_fields()
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
             return fields
 
         else:
@@ -290,22 +290,14 @@ class TaskSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         data = super().to_representation(instance)
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
             return data
 
-        # Check for newly created instances
-        elif not hasattr(instance.task_group, 'team_members'):
-            return data
-
-        # Not newly created
         else:
             if request.user.profile in\
                     instance.task_group.team_members.all():
 
                 return data
-
-        # For newly created instances
-        return None
 
 
 class TaskResourceSerializer(serializers.ModelSerializer):
@@ -332,7 +324,8 @@ class TaskResourceSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validate that the user is a team member of the selected task.
+        Prevents users from assigning task resourcess to tasks of
+        which they are not a team member.
 
         This method checks if the user is a team member of the task associated
         with the submitted data. Staff users are exempt from this validation.
@@ -340,10 +333,11 @@ class TaskResourceSerializer(serializers.ModelSerializer):
 
         request = self.context['request']
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
             return data
 
-        # Check if it's an update or create operation
+        # Check if the submitted data contains an actual task instance to either update
+        # or create an task resource instance.
         if 'task' in data:
             task_instance = data['task']
 
@@ -355,6 +349,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
                     team.'''
                 )
 
+        # Return dta if the is no task instance in the submitted data
         return data
 
     def to_representation(self, instance):
@@ -370,7 +365,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         request = self.context['request']
         data = super().to_representation(instance)
 
-        if request.user.is_staff:
+        if request and request.user.is_staff:
 
             return data
 
@@ -378,6 +373,3 @@ class TaskResourceSerializer(serializers.ModelSerializer):
                 in instance.task.task_group.team_members.all():
 
             return data
-
-        else:
-            return None

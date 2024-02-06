@@ -46,7 +46,7 @@ def create_task_group(sender, instance, created, **kwargs):
         # Adds sample positions to the suggested_positions field
         if instance.category:
             positions = Position.objects.filter(
-                related_category=instance.category
+                category=instance.category
             ).distinct().order_by('id')[:4]
 
             task_group.suggested_positions.add(*positions)

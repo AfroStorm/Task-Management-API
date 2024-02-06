@@ -62,7 +62,7 @@ class TestsTaskResourceModel(APITestCase):
             workforce planning, ensuring effective management of human
             resources within an organization.''',
             is_task_manager=False,
-            related_category=self.human_resource_category
+            category=self.human_resource_category
         )
 
         # Creating userprofile instances

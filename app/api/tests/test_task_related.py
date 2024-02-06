@@ -62,7 +62,7 @@ class TestTaskModel(APITestCase):
             workforce planning, ensuring effective management of human
             resources within an organization.''',
             is_task_manager=False,
-            related_category=self.human_resource_category,
+            category=self.human_resource_category,
         )
 
         # Creating userprofile instances
@@ -222,6 +222,8 @@ class TestTaskModel(APITestCase):
         """Tests if the create view action allows authenticated task
         manager."""
 
+        post_save.connect(signals.create_task_group, sender=models.Task)
+
         # Task manager (Allowed to create task instances)
         self.regular_user1.profile.position.is_task_manager = True
         self.client.force_authenticate(user=self.regular_user1)
@@ -283,6 +285,8 @@ class TestTaskModel(APITestCase):
     def test_owner_gets_assigned_to_task_when_not_yet_set(self):
         """Tests if the task view sets the request user profile to the newly
         created task as owner."""
+
+        post_save.connect(signals.create_task_group, sender=models.Task)
 
         # Task manager (Allowed to create task instances)
         self.regular_user1.profile.position.is_task_manager = True
@@ -630,7 +634,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
-                'resource_collection': [],
+                'taskresource_set': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -642,7 +646,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task2.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
-                'resource_collection': [],
+                'taskresource_set': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile2.email),
                 'task_group': self.task_group2.id,
@@ -673,7 +677,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': 'wrong',
-                'resource_collection': [],
+                'taskresource_set': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -718,7 +722,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
-                'resource_collection': [],
+                'taskresource_set': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -748,7 +752,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task1.due_date),
                 'category': self.human_resource_category.name,
                 'priority': self.priority.caption,
-                'resource_collection': [],
+                'taskresource_set': [],
                 'status': 'wrong',
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
@@ -760,7 +764,7 @@ class TestTaskModel(APITestCase):
                 'due_date': str(self.task2.due_date),
                 'category': self.human_resource_category.name,
                 'priority': 'wrong',
-                'resource_collection': [],
+                'taskresource_set': [],
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group2.id,

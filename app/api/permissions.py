@@ -36,7 +36,7 @@ class IsOwner(permissions.BasePermission):
 
             # Allows access to task-group-instance owner
             elif isinstance(obj, models.TaskGroup):
-                if request.user.profile == obj.assigned_task.owner:
+                if request.user.profile == obj.task.owner:
                     return True
 
             # Allows access to task-instance owner

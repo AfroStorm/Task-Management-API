@@ -55,7 +55,7 @@ class TestPositionModel(APITestCase):
             workforce planning, ensuring effective management of human
             resources within an organization.''',
             is_task_manager=False,
-            related_category=self.human_resource_category
+            category=self.human_resource_category
         )
         self.financial_position = models.Position.objects.create(
             title='Financial Analyst',
@@ -64,7 +64,7 @@ class TestPositionModel(APITestCase):
             prepare reports, and provide recommendations to support strategic
             financial decision-making within the organization.''',
             is_task_manager=False,
-            related_category=self.financial_category
+            category=self.financial_category
         )
 
         # Creating userprofile instances
@@ -163,7 +163,7 @@ class TestPositionModel(APITestCase):
                 support, implement security measures, and ensure the smooth
                 operation of IT resources.''',
             'is_task_manager': False,
-            'related_category': it_category.name,
+            'category': it_category.name,
         }
         response = self.client.post(url, data, format='json')
 
@@ -192,7 +192,7 @@ class TestPositionModel(APITestCase):
                 support, implement security measures, and ensure the smooth
                 operation of IT resources.''',
             'is_task_manager': False,
-            'related_category': it_category.name,
+            'category': it_category.name,
         }
         response = self.client.post(url, data, format='json')
 
@@ -218,7 +218,7 @@ class TestPositionModel(APITestCase):
                 reports, and provide recommendations to support strategic
                 financial decision-making within the organization.''',
             'is_task_manager': False,
-            'related_category': self.human_resource_category.name
+            'category': self.human_resource_category.name
         }
         response = self.client.put(url, data, format='json')
 
@@ -243,7 +243,7 @@ class TestPositionModel(APITestCase):
                 reports, and provide recommendations to support strategic
                 financial decision-making within the organization.''',
             'is_task_manager': False,
-            'related_category': self.human_resource_category.name
+            'category': self.human_resource_category.name
         }
         response = self.client.put(url, data, format='json')
 
@@ -265,7 +265,7 @@ class TestPositionModel(APITestCase):
         data = {
             'title': 'Financial Analyst',
             'is_task_manager': False,
-            'related_category': self.human_resource_category.name
+            'category': self.human_resource_category.name
         }
         response = self.client.patch(url, data, format='json')
 
@@ -286,7 +286,7 @@ class TestPositionModel(APITestCase):
         data = {
             'title': 'Financial Analyst',
             'is_task_manager': False,
-            'related_category': self.human_resource_category.name
+            'category': self.human_resource_category.name
         }
         response = self.client.patch(url, data, format='json')
 
@@ -342,7 +342,7 @@ class TestPositionModel(APITestCase):
 
         data = serializer.data
 
-        expected_data = {'related_category': 'Financial Analysis'}
+        expected_data = {'category': 'Financial Analysis'}
 
         # Checks if the slugfields are occupied with the correct values
         for field in expected_data:

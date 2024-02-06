@@ -63,7 +63,7 @@ class TestTaskGroupModel(APITestCase):
             workforce planning, ensuring effective management of human
             resources within an organization.''',
             is_task_manager=False,
-            related_category=self.human_resource_category,
+            category=self.human_resource_category,
         )
 
         # Creating userprofile instances
@@ -229,7 +229,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'The first TaskGroup',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': new_task.id
+            'task': new_task.id
         }
 
         response = self.client.post(url, data, format='json')
@@ -259,7 +259,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'The first TaskGroup',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': new_task.id
+            'task': new_task.id
         }
         response = self.client.post(url, data, format='json')
 
@@ -287,7 +287,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'The first TaskGroup',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': new_task.id
+            'task': new_task.id
         }
         response = self.client.post(url, data, format='json')
 
@@ -306,7 +306,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'Updated task group',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': self.task1.id
+            'task': self.task1.id
         }
         response = self.client.put(url, data, format='json')
 
@@ -324,7 +324,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'Updated task group',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': self.task1.id
+            'task': self.task1.id
         }
         response = self.client.put(url, data, format='json')
 
@@ -342,7 +342,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'Updated task group',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': self.task2.id
+            'task': self.task2.id
         }
         response = self.client.put(url, data, format='json')
 
@@ -360,7 +360,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'Updated task group',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': self.task2.id
+            'task': self.task2.id
         }
         response = self.client.put(url, data, format='json')
 
@@ -378,7 +378,7 @@ class TestTaskGroupModel(APITestCase):
             'name': 'Updated task group',
             'suggested_positions': [self.human_resource_position.title],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': self.task1.id
+            'task': self.task1.id
         }
         response = self.client.put(url, data, format='json')
 
@@ -555,7 +555,7 @@ class TestTaskGroupModel(APITestCase):
         fields = serializer.fields
 
         # List of expected read-only fields
-        read_only_fields = ['id', 'assigned_task']
+        read_only_fields = ['id', 'task']
 
         # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
@@ -591,21 +591,21 @@ class TestTaskGroupModel(APITestCase):
                 'name': self.task_group1.name,
                 'suggested_positions': [self.human_resource_position.title],
                 'team_members': [self.regular_userprofile.email],
-                'assigned_task': self.task1.id
+                'task': self.task1.id
             },
             {
                 'id': self.task_group2.id,
                 'name': self.task_group2.name,
                 'suggested_positions': [self.human_resource_position.title],
                 'team_members': [self.regular_userprofile2.email],
-                'assigned_task': self.task2.id
+                'task': self.task2.id
             },
             {
                 'id': self.task_group3.id,
                 'name': self.task_group3.name,
                 'suggested_positions': [self.human_resource_position.title],
                 'team_members': [self.admin_userprofile.email],
-                'assigned_task': None
+                'task': None
             }
         ]
 
@@ -654,7 +654,7 @@ class TestTaskGroupModel(APITestCase):
                 'name': self.task_group1.name,
                 'suggested_positions': [self.human_resource_position.title],
                 'team_members': [self.regular_userprofile.email],
-                'assigned_task': self.task1.id
+                'task': self.task1.id
             }
         ]
 
@@ -798,25 +798,25 @@ class TestTaskGroupModel(APITestCase):
             title='Human Resource Position 2',
             description='''A dummy position instance for testing purposes''',
             is_task_manager=True,
-            related_category=self.human_resource_category,
+            category=self.human_resource_category,
         )
         human_resource_position3 = models.Position.objects.create(
             title='Human Resource Position 3',
             description='''A dummy position instance for testing purposes''',
             is_task_manager=True,
-            related_category=self.human_resource_category,
+            category=self.human_resource_category,
         )
         human_resource_position4 = models.Position.objects.create(
             title='Human Resource Position 4',
             description='''A dummy position instance for testing purposes''',
             is_task_manager=True,
-            related_category=self.human_resource_category,
+            category=self.human_resource_category,
         )
         human_resource_position5 = models.Position.objects.create(
             title='Human Resource Position 5',
             description='''A dummy position instance for testing purposes''',
             is_task_manager=True,
-            related_category=self.human_resource_category,
+            category=self.human_resource_category,
         )
 
         # Sending a post request to create a new task instance to trigger
@@ -837,7 +837,7 @@ class TestTaskGroupModel(APITestCase):
         # task group.
         task_id = response.data['id']
         task_group_instance = models.TaskGroup.objects.get(
-            assigned_task=task_id
+            task=task_id
         )
 
         # Retrieving the positions and team members from the newly created
@@ -858,7 +858,7 @@ class TestTaskGroupModel(APITestCase):
             'name': task_group_instance.name,
             'suggested_positions': positions,
             'team_members': team_members,
-            'assigned_task': task_id
+            'task': task_id
         }
 
         # The expected data to be compared
@@ -872,7 +872,7 @@ class TestTaskGroupModel(APITestCase):
                 human_resource_position4.title,
             ],
             'team_members': [self.regular_userprofile.email],
-            'assigned_task': task_id
+            'task': task_id
         }
 
         # Check if the suggested_positions/team_members got assigned

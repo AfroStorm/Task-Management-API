@@ -211,10 +211,10 @@ class Position(models.Model):
     description = models.TextField()
     is_task_manager = models.BooleanField(default=False)
 
-    related_category = models.ForeignKey(
+    category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
-        related_name='position_set',
+        related_name='positions',
         blank=True,
         null=True
     )
@@ -274,7 +274,7 @@ class UserProfile(models.Model):
     position = models.ForeignKey(
         Position,
         on_delete=models.DO_NOTHING,
-        related_name='incumbent',
+        related_name='employees',
         null=True,
         blank=True
     )
@@ -328,7 +328,6 @@ class TaskGroup(models.Model):
     suggested_positions = models.ManyToManyField(Position)
     team_members = models.ManyToManyField(
         UserProfile,
-        related_name='task_group'
     )
 
     def calculate_members(self):
@@ -401,35 +400,31 @@ class Task(models.Model):
     category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
-        related_name='categorized_tasks',
         null=True,
         blank=True
     )
     priority = models.ForeignKey(
         Priority,
         on_delete=models.DO_NOTHING,
-        related_name='tasks_to_prioritize',
         null=True,
         blank=True
     )
     status = models.ForeignKey(
         Status,
         on_delete=models.DO_NOTHING,
-        related_name='task_status',
         null=True,
         blank=True
     )
     owner = models.ForeignKey(
         UserProfile,
         on_delete=models.DO_NOTHING,
-        related_name='tasks_to_manage',
         null=True,
         blank=True
     )
     task_group = models.OneToOneField(
         TaskGroup,
         on_delete=models.CASCADE,
-        related_name='assigned_task',
+        related_name='task',
         null=True,
         blank=True
     )
@@ -474,7 +469,6 @@ class TaskResource(models.Model):
 
     task = models.ForeignKey(
         Task,
-        related_name='resource_collection',
         on_delete=models.CASCADE,
         null=True,
         blank=True
