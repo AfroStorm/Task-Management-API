@@ -153,7 +153,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
             'email': 's.schuhmacher@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.post(url, data, format='json')
 
@@ -173,7 +173,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
             'email': 's.schuhmacher@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.post(url, data, format='json')
 
@@ -192,7 +192,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
             'email': 's.schuhmacher@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.post(url, data, format='json')
 
@@ -217,7 +217,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Name',
             'phone_number': '0176554488',
             'email': 'updatedemail@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.put(url, data, format='json')
 
@@ -240,7 +240,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Name',
             'phone_number': '0176554488',
             'email': 'updatedemail@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.put(url, data, format='json')
 
@@ -264,7 +264,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Name',
             'phone_number': '0176554488',
             'email': 'updatedemail@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.put(url, data, format='json')
 
@@ -287,7 +287,7 @@ class TestUserProfileModel(APITestCase):
             'last_name': 'Name',
             'phone_number': '0176554488',
             'email': 'updatedemail@gmail.com',
-            'position': self.human_resource_position.id
+            'position': self.human_resource_position.title
         }
         response = self.client.put(url, data, format='json')
 
@@ -467,7 +467,9 @@ class TestUserProfileModel(APITestCase):
         fields = serializer.fields
 
         # List of expected read-only fields
-        read_only_fields = ['id', 'owner', 'task_group', 'tasks_to_manage']
+        read_only_fields = [
+            'id', 'owner', 'task_group', 'tasks_to_manage', 'position'
+        ]
 
         # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():

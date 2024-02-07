@@ -25,7 +25,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {
                 'write_only': True,
-                'style': {'input_style': 'password'}
+                'style': {'input_type': 'password'}
             },
             'profile': {'required': False}
         }
@@ -115,6 +115,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(),
         slug_field='email',
     )
+    position = serializers.SlugRelatedField(
+        queryset=models.Position.objects.all(),
+        slug_field='title'
+    )
 
     class Meta:
         model = models.UserProfile
@@ -143,7 +147,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return fields
 
         else:
-            read_only_fields = ['owner', 'taskgroup_set', 'task_set']
+            read_only_fields = [
+                'owner', 'taskgroup_set', 'task_set', 'position']
 
             for field in read_only_fields:
                 fields[field].read_only = True

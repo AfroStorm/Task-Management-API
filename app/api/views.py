@@ -4,6 +4,7 @@ from api import serializers, models, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 # Create your views here.
 
@@ -226,7 +227,9 @@ class TaskView(ModelViewSet):
         elif self.action == 'update' or \
                 self.action == 'partial_update' or \
                 self.action == 'destroy':
-            permission_classes = [IsAdminUser | permissions.IsOwner]
+            permission_classes = [
+                IsAdminUser | permissions.IsOwner & permissions.IsTaskManager
+            ]
 
         else:
             permission_classes = []
@@ -267,6 +270,31 @@ class TaskResourceView(ModelViewSet):
 
 
 class LoginView(ObtainAuthToken):
-    """Login view for browsable api."""
-
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+    # def perform_login(self, user):
+    #     # Add additional logging or print statements for debugging
+    #     print(f"User email: {user.email}")
+    #     print(f"User ID: {user.id}")
+
+    #     # Check if the user is active
+    #     if user.is_active:
+    #         print("User is active.")
+    #     else:
+    #         print("User is not active.")
+
+    #     # Check if the user is a staff member or superuser
+    #     if user.is_staff:
+    #         print("User is a staff member.")
+    #     if user.is_superuser:
+    #         print("User is a superuser.")
+
+    #     # Print the authentication token associated with the user
+    #     try:
+    #         token = Token.objects.get(user=user)
+    #         print(f"Authentication Token: {token.key}")
+    #     except Token.DoesNotExist:
+    #         print("No authentication token found for the user.")
+
+    #     # Call the super method to continue with the default behavior
+    #     super().perform_login(user)

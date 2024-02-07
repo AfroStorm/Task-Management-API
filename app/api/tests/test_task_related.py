@@ -363,7 +363,8 @@ class TestTaskModel(APITestCase):
     def test_owner_can_access_update(self):
         """Tests if the update view action allows owner."""
 
-        # Task owner
+        # Task owner whos also a task_manager
+        self.regular_user1.profile.position.is_task_manager = True
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-detail', args=[self.task1.id])
@@ -380,11 +381,11 @@ class TestTaskModel(APITestCase):
         # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_staff_and_non_owner_cant_access_update(self):
+    def test_non_staff_and_non_owner_non_task_manager_cant_access_update(self):
         """Tests if the update view action disallows non staff and non task
         owner."""
 
-        # Non-staff user who's also not the object owner
+        # Non-staff/non-task_manager user who's also not the object owner
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-detail', args=[self.task2.id])
@@ -444,7 +445,8 @@ class TestTaskModel(APITestCase):
     def test_owner_can_access_partial_update(self):
         """Tests if the update view action allows owner."""
 
-        # Task owner
+        # Task owner whos also a task_manager
+        self.regular_user1.profile.position.is_task_manager = True
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-detail', args=[self.task1.id])
@@ -459,11 +461,11 @@ class TestTaskModel(APITestCase):
         # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_non_staff_and_non_owner_cant_access_partial_update(self):
+    def test_non_staff_and_non_owner_non_task_manager_cant_access_partial_update(self):
         """Tests if the partial update view action disallows non staff and
         non task owner."""
 
-        # Non-staff user who's also not the object owner
+        # Non-staff/non-task_manager user who's also not the object owner
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-detail', args=[self.task2.id])
@@ -510,9 +512,11 @@ class TestTaskModel(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_owner_can_access_destroy(self):
-        """Tests if the destroy view action allows owner."""
+        """Tests if the destroy view action allows owner. It is also required
+        to have a position of task_mnager true."""
 
-        # Task owner
+        # Task owner whos also a task_manager
+        self.regular_user1.profile.position.is_task_manager = True
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-detail', args=[self.task1.id])
@@ -521,11 +525,11 @@ class TestTaskModel(APITestCase):
         # Check if access is granted
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_non_staff_and_non_owner_cant_access_destroy(self):
+    def test_non_staff_and_non_owner_non_task_manager_cant_access_destroy(self):
         """Tests if the destroy view action disallows non staff and non task
         owner."""
 
-        # Non-staff user who's also not the object owner
+        # Non-staff/non-task_manager user who's also not the object owner
         self.client.force_authenticate(user=self.regular_user1)
 
         url = reverse('task-detail', args=[self.task2.id])

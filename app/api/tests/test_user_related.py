@@ -382,12 +382,12 @@ class TestCustomUserModel(APITestCase):
         )
         password_field = serializer.fields['password']
 
-        # Check if password field is set to read-only
+        # Check if password field is set to write-only
         self.assertTrue(password_field.write_only)
 
         # Checks if input style is password
-        pw_input_style = password_field.style.get('input_style', None)
-        self.assertEqual(pw_input_style, 'password')
+        pw_input_type = password_field.style.get('input_type', None)
+        self.assertEqual(pw_input_type, 'password')
 
     def test_serializer_profile_field(self):
         """Tests if the get fields method of the serializer is setting
