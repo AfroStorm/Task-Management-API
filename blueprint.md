@@ -70,8 +70,9 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - Create an api documentation for the project.
 
-- Try to fix the issue of the api login endpoint , where when a user got created through the create user api its not possible to log it in afterwards
-
 - Implement filter logic within the views
+
+- Write a test for the custom user serializer create method.
+
 
 - after the app do a final check for any typos or grammatical errors.

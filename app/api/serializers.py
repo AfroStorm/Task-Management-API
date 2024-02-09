@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from api import models
 from rest_framework.exceptions import ValidationError
-from django.db.models.query import QuerySet
+from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
@@ -50,6 +50,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
             fields['profile'].read_only = True
 
             return fields
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(
+            validated_data.get('password')
+        )
+        return super().create(validated_data)
 
 
 class PrioritySerializer(serializers.ModelSerializer):
