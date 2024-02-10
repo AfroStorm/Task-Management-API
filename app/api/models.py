@@ -284,7 +284,7 @@ class UserProfile(models.Model):
         """
         Returns a string representation of the user profile based on email and phone number.
         """
-        return f'Email: {self.owner.email} - Phone nr.: {self.phone_number}'
+        return f'{self.first_name} {self.last_name}'
 
 
 class TaskGroup(models.Model):
