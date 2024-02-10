@@ -39,7 +39,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             profile for non-staff users.
         """
 
-        request = self.context['request']
+        request = self.context.get('request')
         fields = super().get_fields()
 
         if request and request.user.is_staff:

@@ -389,6 +389,25 @@ class TestCustomUserModel(APITestCase):
         pw_input_type = password_field.style.get('input_type', None)
         self.assertEqual(pw_input_type, 'password')
 
+    def test_serializer_password_gets_hashed(self):
+        """Tests if the create method of the serializer is hashing the
+        password when a new user instance gets created."""
+
+        # unauthenticated user
+
+        url = reverse('customuser-list')
+        data = {
+            'email': 'dummyemail@gmail.com',
+            'password': 'blabla123.'
+        }
+        response = self.client.post(url, data, format='json')
+
+        user_id = response.data['id']
+        new_user = User.objects.get(id=user_id)
+
+        # Check if password got hashed
+        self.assertTrue(new_user.check_password('blabla123.'))
+
     def test_serializer_profile_field(self):
         """Tests if the get fields method of the serializer is setting
         the profile field to required false."""
