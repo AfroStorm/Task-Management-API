@@ -4,8 +4,8 @@ from api import serializers, models, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.filters import SearchFilter, OrderingFilter
 # Create your views here.
 
 User = get_user_model()
@@ -17,6 +17,8 @@ class CustomUserView(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = serializers.CustomUserSerializer
     authentication_classes = [TokenAuthentication]
+    filter_backends = [SearchFilter,]
+    search_fields = ['email']
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -45,6 +47,8 @@ class PositionView(ModelViewSet):
     queryset = models.Position.objects.all()
     serializer_class = serializers.PositionSerializer
     authentication_classes = [TokenAuthentication,]
+    filter_backends = [SearchFilter,]
+    search_fields = ['title']
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -72,6 +76,8 @@ class CategoryView(ModelViewSet):
     queryset = models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
     authentication_classes = [TokenAuthentication,]
+    filter_backends = [SearchFilter,]
+    search_fields = ['name']
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -99,6 +105,8 @@ class StatusView(ModelViewSet):
     queryset = models.Status.objects.all()
     serializer_class = serializers.StatusSerializer
     authentication_classes = [TokenAuthentication,]
+    filter_backends = [SearchFilter,]
+    search_fields = ['caption']
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -126,6 +134,8 @@ class PriorityView(ModelViewSet):
     queryset = models.Priority.objects.all()
     serializer_class = serializers.PrioritySerializer
     authentication_classes = [TokenAuthentication,]
+    filter_backends = [SearchFilter,]
+    search_fields = ['caption']
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -153,6 +163,13 @@ class UserProfileView(ModelViewSet):
     queryset = models.UserProfile.objects.all()
     serializer_class = serializers.UserProfileSerializer
     authentication_classes = [TokenAuthentication]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = [
+        'owner', 'first_name', 'last_name', 'phone_number', 'position'
+    ]
+    ordering_fields = [
+        'owner', 'first_name', 'last_name', 'phone_number', 'position'
+    ]
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -182,6 +199,8 @@ class TaskGroupView(ModelViewSet):
     queryset = models.TaskGroup.objects.all()
     serializer_class = serializers.TaskGroupSerializer
     authentication_classes = [TokenAuthentication]
+    filter_backends = [SearchFilter,]
+    search_fields = ['name', 'id']
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -212,6 +231,12 @@ class TaskView(ModelViewSet):
     queryset = models.Task.objects.all()
     serializer_class = serializers.TaskSerializer
     authentication_classes = [TokenAuthentication]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['title', 'id', 'owner', 'task_group']
+    ordering_fields = [
+        'title', 'id', 'due_date', 'category', 'priority',
+        'status', 'owner', 'task_group'
+    ]
 
     def get_permissions(self):
         """Requires specific permissions depending on the view action and
@@ -251,6 +276,8 @@ class TaskResourceView(ModelViewSet):
     queryset = models.TaskResource.objects.all()
     serializer_class = serializers.TaskResourceSerializer
     authentication_classes = [TokenAuthentication]
+    search_fields = ['source_name', 'id', 'resource_link', 'task']
+    ordering_fields = ['task', 'id', 'resource_link']
 
     def get_permissions(self):
         if self.action == 'retrieve' or\

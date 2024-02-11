@@ -63,16 +63,8 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 ## Next
 
-- Think about creating custom view actions to modify instances.
 - Maybe add a pdf generator
 
-- Maybe change the task owner to task manager and change the task manager field in the user profile to task holder or something similar.
-
 - Create an api documentation for the project.
-
-- Implement filter logic within the views
-
-- Write a test for the custom user serializer create method.
-
 
 - after the app do a final check for any typos or grammatical errors.
