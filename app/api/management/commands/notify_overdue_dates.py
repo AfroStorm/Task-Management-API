@@ -17,14 +17,14 @@ class Command(BaseCommand):
             due_date__lt=current_date
         )
 
-        for obj in overdue_dates:
+        for task in overdue_dates:
             recipient_list = [
-                member.email for member in obj.task_group.team_members.all()
+                member.email for member in task.task_group.team_members.all()
             ]
 
             subject = 'The date of the task is overdue!'
-            message = f'''The deadline for the task "{obj.title}" with the
-                       ID: {obj.id} is overdue! Due-date: {obj.due_date},
+            message = f'''The deadline for the task "{task.title}" with the
+                       ID: {task.id} is overdue! Due-date: {task.due_date},
                        Current-date: {current_date}.'''
             from_email = 'admin@it-backends.com'
 

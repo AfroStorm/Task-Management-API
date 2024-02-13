@@ -20,15 +20,17 @@ class Command(BaseCommand):
             due_date__gte=current_date
         )
 
-        for obj in due_dates_approaching:
+        for task in due_dates_approaching:
 
             subject = 'Task due date is approaching'
-            message = f'''The due date {obj.due_date} of the task 
-                       "{obj.title}" is approaching.'''
+            message = f'''The deadline for the task "{task.title}" with the
+                          ID: {task.id} is approaching! Due-date:
+                          {task.due_date}, Current-date: {current_date}.'''
+
             from_email = 'admin@it-backends.com'
 
             recipient_list = [
-                member.email for member in obj.task_group.team_members.all()
+                member.email for member in task.task_group.team_members.all()
             ]
 
             send_mail(subject, message, from_email, recipient_list)

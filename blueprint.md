@@ -63,10 +63,12 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 ## Next
 
-- Maybe add a pdf generator
+- Maybe add a pdf generator.
+
+- Work on points 7, 9 and 10.
 
 - Create an api documentation for the project.
 
 - after the app do a final check for any typos or grammatical errors.
 
-- Add logout view
+- Add logout view.
