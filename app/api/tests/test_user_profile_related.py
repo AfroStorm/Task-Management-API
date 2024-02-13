@@ -29,10 +29,6 @@ class TestUserProfileModel(APITestCase):
             email='christucker@gmail.com',
             password='blabla123.'
         )
-        self.profile_less_user = User.objects.create(
-            email='jackiechan@gmail.com',
-            password='blabla123.'
-        )
         self.admin_user = User.objects.create(
             email='tinaturner@gmail.com',
             password='blabla123.',
@@ -148,7 +144,6 @@ class TestUserProfileModel(APITestCase):
 
         url = reverse('userprofile-list')
         data = {
-            'owner': self.profile_less_user.id,
             'first_name': 'Sebastian',
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
@@ -168,7 +163,6 @@ class TestUserProfileModel(APITestCase):
 
         url = reverse('userprofile-list')
         data = {
-            'owner': self.profile_less_user.email,
             'first_name': 'Sebastian',
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
@@ -187,7 +181,6 @@ class TestUserProfileModel(APITestCase):
 
         url = reverse('userprofile-list')
         data = {
-            'owner': self.profile_less_user.email,
             'first_name': 'Sebastian',
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
@@ -542,11 +535,9 @@ class TestUserProfileModel(APITestCase):
 
         url = reverse('customuser-list')
         one_off_userprofile = models.UserProfile.objects.create(
-            owner=self.profile_less_user,
             first_name='Sebastian',
             last_name='Schuhmacher',
             phone_number='0176554488',
-            email='s.schuhmacher@gmail.com',
             position=self.human_resource_position
         )
 

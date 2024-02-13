@@ -21,10 +21,11 @@ def create_or_update_profile(sender, instance, created, **kwargs):
         )
         profile.save()
 
-    # If a task was not created and a profile already exists update it
-    # And if a task was created and profile got already created and assigned
-    else:
+    # In any other case must always synchronize the profile owner/email
+    # (profile.email=instance.email, profile.owner=instance)
+    elif created and hasattr(instance, 'profile'):
         instance.profile.email = instance.email
+        instance.profile.owner = instance
         instance.profile.save()
 
 
