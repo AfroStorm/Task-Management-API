@@ -148,7 +148,7 @@ class TestUserProfileModel(APITestCase):
 
         url = reverse('userprofile-list')
         data = {
-            'owner': self.profile_less_user.email,
+            'owner': self.profile_less_user.id,
             'first_name': 'Sebastian',
             'last_name': 'Schuhmacher',
             'phone_number': '0176554488',
@@ -212,7 +212,7 @@ class TestUserProfileModel(APITestCase):
             args=[self.regular_userprofile.id]
         )
         data = {
-            'owner': self.regular_user1.email,
+            'owner': self.regular_user1.id,
             'first_name': 'Updated',
             'last_name': 'Name',
             'phone_number': '0176554488',
@@ -529,9 +529,9 @@ class TestUserProfileModel(APITestCase):
         self.assertEqual(profile_instance.email, user_instance.email)
 
     def test_user_profile_gets_not_created_and_assigned_when_already_set(self):
-        """Tests if the userprofile doesnt get created and assigned by the
-        signal handler after a new user was created if its already set by the
-        staff user."""
+        """Tests if the userprofile doesnt get created and assigned to the
+        user by the signal handler after a new user was created if its
+        already set by the staff user."""
 
         # Activate signal handler for creating
         post_save.connect(signals.create_or_update_profile, sender=User)
@@ -549,6 +549,8 @@ class TestUserProfileModel(APITestCase):
             email='s.schuhmacher@gmail.com',
             position=self.human_resource_position
         )
+
+        # Creating user instance
         data = {
             'email': 'alibaba@gmail.com',
             'password': 'blabla123.',

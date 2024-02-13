@@ -168,7 +168,7 @@ class UserProfileView(ModelViewSet):
         'owner', 'first_name', 'last_name', 'phone_number', 'position'
     ]
     ordering_fields = [
-        'owner', 'first_name', 'last_name', 'phone_number', 'position'
+        'owner', 'first_name', 'last_name', 'position'
     ]
 
     def get_permissions(self):

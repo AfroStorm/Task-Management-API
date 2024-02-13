@@ -117,10 +117,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         owner: A slug-related field representing the owner of the profile.
     """
 
-    owner = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='email',
-    )
     position = serializers.SlugRelatedField(
         queryset=models.Position.objects.all(),
         slug_field='title'
@@ -135,6 +131,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'taskgroup_set': {'required': False},
             'task_set': {'required': False},
+            'owner': {'required': False}
         }
 
     def get_fields(self):
