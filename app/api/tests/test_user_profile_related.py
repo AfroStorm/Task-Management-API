@@ -452,7 +452,7 @@ class TestUserProfileModel(APITestCase):
         response = self.client.get(url, format='json')
         request = response.wsgi_request
 
-        serializer = serializers.TaskSerializer(
+        serializer = serializers.UserProfileSerializer(
             instance=self.regular_userprofile,
             context={'request': request}
         )
@@ -461,15 +461,17 @@ class TestUserProfileModel(APITestCase):
 
         # List of expected read-only fields
         read_only_fields = [
-            'id', 'owner', 'task_group', 'tasks_to_manage', 'position'
+            'id', 'owner', 'taskgroup_set', 'task_set', 'position'
         ]
 
         # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
             if field in read_only_fields:
+                print(f'READ ONLY FIELD: {field}')
                 self.assertTrue(field_instance.read_only)
 
             else:
+                print(f'WRITABLE FIELD: {field}')
                 self.assertFalse(field_instance.read_only)
 
     # Signal handler

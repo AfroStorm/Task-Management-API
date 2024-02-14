@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, \
     PermissionsMixin
@@ -329,6 +328,7 @@ class TaskGroup(models.Model):
     suggested_positions = models.ManyToManyField(Position)
     team_members = models.ManyToManyField(
         UserProfile,
+        related_name='taskgroup_set'
     )
 
     def calculate_members(self):
@@ -429,6 +429,8 @@ class Task(models.Model):
         null=True,
         blank=True
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self) -> str:
         """

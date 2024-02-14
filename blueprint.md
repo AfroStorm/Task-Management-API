@@ -67,6 +67,10 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - Work on points 7, 9 and 10.
 
+
+- POINT 7 - write tests: signals.set_task_completion_date(), TaskView.tasks_statistics()
+
+
 - Create an api documentation for the project.
 
 - after the app do a final check for any typos or grammatical errors.

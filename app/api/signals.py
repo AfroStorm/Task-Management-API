@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from api.models import UserProfile, Task, TaskGroup, Position
 
@@ -53,4 +54,17 @@ def create_task_group(sender, instance, created, **kwargs):
 
             task_group.suggested_positions.add(*positions)
 
+        instance.save()
+
+
+# Task - created_at field
+@receiver(post_save, sender=Task)
+def set_task_completion_date(sender, instance, created, **kwargs):
+    """
+    Checks if the status of the task is completed and sets the completed_at
+    field of the task to the current date.
+    """
+
+    if not instance.completed_at and instance.status == 'Completed':
+        instance.completed_at = timezone.now()
         instance.save()

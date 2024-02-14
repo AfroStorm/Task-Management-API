@@ -151,7 +151,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         else:
             read_only_fields = [
-                'owner', 'taskgroup_set', 'task_set', 'position']
+                'owner', 'taskgroup_set', 'task_set', 'position'
+            ]
 
             for field in read_only_fields:
                 fields[field].read_only = True
@@ -270,7 +271,8 @@ class TaskSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = [
             'id', 'title', 'description', 'due_date', 'category', 'priority',
-            'status', 'owner', 'task_group', 'taskresource_set'
+            'status', 'owner', 'task_group', 'taskresource_set',
+            'completed_at', 'created_at'
         ]
         extra_kwargs = {
             'task_group': {'required': False}
@@ -288,6 +290,8 @@ class TaskSerializer(serializers.ModelSerializer):
         else:
             fields['task_group'].read_only = True
             fields['owner'].read_only = True
+            fields['created_at'].read_only = True
+            fields['completed_at'].read_only = True
 
             return fields
 

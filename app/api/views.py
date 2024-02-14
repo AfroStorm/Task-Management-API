@@ -1,7 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.viewsets import ModelViewSet
 from api import serializers, models, permissions
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -12,7 +15,9 @@ User = get_user_model()
 
 
 class CustomUserView(ModelViewSet):
-    """Modelviewset for CustomUser model with basic crud functions."""
+    """
+    Modelviewset for CustomUser model with basic crud functions.
+    """
 
     queryset = User.objects.all()
     serializer_class = serializers.CustomUserSerializer
@@ -21,8 +26,10 @@ class CustomUserView(ModelViewSet):
     search_fields = ['email']
 
     def get_permissions(self):
-        """Requires specific permissions depending on the view action and
-        the request user."""
+        """
+        Requires specific permissions depending on the view action and
+        the request user.
+        """
 
         if self.action == 'retrieve' or\
                 self.action == 'list':
@@ -42,7 +49,9 @@ class CustomUserView(ModelViewSet):
 
 
 class PositionView(ModelViewSet):
-    """Modelviewset for Position model with basic crud functions."""
+    """
+    Modelviewset for Position model with basic crud functions.
+    """
 
     queryset = models.Position.objects.all()
     serializer_class = serializers.PositionSerializer
@@ -71,7 +80,9 @@ class PositionView(ModelViewSet):
 
 
 class CategoryView(ModelViewSet):
-    """Modelviewset for Category model with basic crud functions."""
+    """
+    Modelviewset for Category model with basic crud functions.
+    """
 
     queryset = models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
@@ -100,7 +111,9 @@ class CategoryView(ModelViewSet):
 
 
 class StatusView(ModelViewSet):
-    """Modelviewset for Status model with basic crud functions."""
+    """
+    Modelviewset for Status model with basic crud functions.
+    """
 
     queryset = models.Status.objects.all()
     serializer_class = serializers.StatusSerializer
@@ -109,8 +122,10 @@ class StatusView(ModelViewSet):
     search_fields = ['caption']
 
     def get_permissions(self):
-        """Requires specific permissions depending on the view action and
-        the request user."""
+        """
+        Requires specific permissions depending on the view action and
+        the request user.
+        """
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -129,7 +144,9 @@ class StatusView(ModelViewSet):
 
 
 class PriorityView(ModelViewSet):
-    """Modelviewset for Task model with basic crud functions."""
+    """
+    Modelviewset for Task model with basic crud functions.
+    """
 
     queryset = models.Priority.objects.all()
     serializer_class = serializers.PrioritySerializer
@@ -138,8 +155,10 @@ class PriorityView(ModelViewSet):
     search_fields = ['caption']
 
     def get_permissions(self):
-        """Requires specific permissions depending on the view action and
-        the request user."""
+        """
+        Requires specific permissions depending on the view action and
+        the request user.
+        """
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -158,7 +177,9 @@ class PriorityView(ModelViewSet):
 
 
 class UserProfileView(ModelViewSet):
-    """Modelviewset for UserProfile model with basic crud functions."""
+    """
+    Modelviewset for UserProfile model with basic crud functions.
+    """
 
     queryset = models.UserProfile.objects.all()
     serializer_class = serializers.UserProfileSerializer
@@ -172,8 +193,10 @@ class UserProfileView(ModelViewSet):
     ]
 
     def get_permissions(self):
-        """Requires specific permissions depending on the view action and
-        the request user."""
+        """
+        Requires specific permissions depending on the view action and
+        the request user.
+        """
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -194,7 +217,9 @@ class UserProfileView(ModelViewSet):
 
 
 class TaskGroupView(ModelViewSet):
-    """Modelviewset for TaskGroup model with basic crud functions."""
+    """
+    Modelviewset for TaskGroup model with basic crud functions.
+    """
 
     queryset = models.TaskGroup.objects.all()
     serializer_class = serializers.TaskGroupSerializer
@@ -203,8 +228,10 @@ class TaskGroupView(ModelViewSet):
     search_fields = ['name', 'id']
 
     def get_permissions(self):
-        """Requires specific permissions depending on the view action and
-        the request user."""
+        """
+        Requires specific permissions depending on the view action and
+        the request user.
+        """
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
@@ -226,7 +253,9 @@ class TaskGroupView(ModelViewSet):
 
 
 class TaskView(ModelViewSet):
-    """Modelviewset for Task model with basic crud functions."""
+    """
+    Modelviewset for Task model with basic crud functions.
+    """
 
     queryset = models.Task.objects.all()
     serializer_class = serializers.TaskSerializer
@@ -235,18 +264,60 @@ class TaskView(ModelViewSet):
     search_fields = ['title', 'id', 'owner', 'task_group']
     ordering_fields = [
         'title', 'id', 'due_date', 'category', 'priority',
-        'status', 'owner', 'task_group'
+        'status', 'owner', 'task_group', 'completed_at'
     ]
 
+    # Statistics for tasks
+    @action(detail=False, methods=['GET'])
+    def tasks_statistics(self, request):
+        """
+        Gives a list of all the completed tasks and tasks in progress of which
+        the request user is the owner. Staff user can see all the tasks in the
+        system independent from ownership status.
+        """
+
+        current_date = timezone.now()
+        three_month_earlier = current_date - timezone.timedelta(days=60)
+
+        total_completed_tasks = models.Task.objects.filter(
+            status='Completed',
+        ).count()
+
+        if request.user.is_staff:
+            total_completed_tasks = models.Task.objects.filter(
+                status='Completed'
+            ).count()
+            total_tasks_in_progress = models.Task.objects.filter(
+                status='In Progress'
+            ).count()
+
+        else:
+            total_completed_tasks = models.Task.objects.filter(
+                status='Completed', owner=request.user
+            ).count()
+            total_tasks_in_progress = models.Task.objects.filter(
+                status='In Progress', owner=request.user
+            ).count()
+
+        return Response(
+            {
+                'total_completed_tasks': total_completed_tasks,
+                'total_tasks_in_progress': total_tasks_in_progress
+            }
+        )
+
     def get_permissions(self):
-        """Requires specific permissions depending on the view action and
-        the request user."""
+        """
+        Requires specific permissions depending on the view action and
+        the request user.
+        """
 
         if self.action == 'list' or \
                 self.action == 'retrieve':
             permission_classes = [IsAuthenticated]
 
-        elif self.action == 'create':
+        elif self.action == 'create' or \
+                self.action == 'tasks_statistics':
             permission_classes = [IsAdminUser | permissions.IsTaskManager]
 
         elif self.action == 'update' or \

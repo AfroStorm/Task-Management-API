@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from datetime import date
 from django.urls import reverse
+from django.utils import timezone
 from api import serializers, models, signals
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -117,7 +118,9 @@ class TestTaskModel(APITestCase):
             priority=self.priority,
             status=self.status,
             owner=self.regular_userprofile,
-            task_group=self.task_group1
+            task_group=self.task_group1,
+            created_at=timezone.now(),
+            completed_at=None
         )
         self.task2 = models.Task.objects.create(
             title='The second Task',
@@ -127,7 +130,9 @@ class TestTaskModel(APITestCase):
             priority=self.priority,
             status=self.status,
             owner=self.regular_userprofile2,
-            task_group=self.task_group2
+            task_group=self.task_group2,
+            created_at=timezone.now(),
+            completed_at=None
         )
 
     # Helper functions
@@ -569,7 +574,7 @@ class TestTaskModel(APITestCase):
         fields = serializer.fields
 
         # List of expected read-only fields
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'created_at']
 
         # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
@@ -599,7 +604,9 @@ class TestTaskModel(APITestCase):
         fields = serializer.fields
 
         # List of expected read-only fields
-        read_only_fields = ['id', 'task_group', 'owner']
+        read_only_fields = [
+            'id', 'task_group', 'owner', 'created_at', 'completed_at'
+        ]
 
         # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
@@ -642,6 +649,8 @@ class TestTaskModel(APITestCase):
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
+                'created_at': self.task1.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
+                'completed_at': None
             },
             {
                 'id': self.task2.id,
@@ -654,6 +663,8 @@ class TestTaskModel(APITestCase):
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile2.email),
                 'task_group': self.task_group2.id,
+                'created_at': self.task2.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
+                'completed_at': None
             }
         ]
 
@@ -685,6 +696,8 @@ class TestTaskModel(APITestCase):
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
+                'created_at': self.task1.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
+                'completed_at': None
             }
         ]
 
@@ -730,6 +743,9 @@ class TestTaskModel(APITestCase):
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
+                'created_at': self.task1.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
+                'completed_at': None
+
             }
         ]
 
@@ -760,6 +776,8 @@ class TestTaskModel(APITestCase):
                 'status': 'wrong',
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group1.id,
+                'created_at': self.task1.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
+                'completed_at': None
             },
             {
                 'id': self.task2.id,
@@ -772,6 +790,8 @@ class TestTaskModel(APITestCase):
                 'status': self.status.caption,
                 'owner': str(self.regular_userprofile.email),
                 'task_group': self.task_group2.id,
+                'created_at': self.task2.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
+                'completed_at': None
             }
         ]
 
