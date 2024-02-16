@@ -5,7 +5,6 @@ from django.utils import timezone
 from api import serializers, models, signals
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from datetime import datetime
 from django.db.models.signals import post_save
 
 
@@ -880,11 +879,12 @@ class TestTaskModel(APITestCase):
         # Retrieving the completed_at datetime of the task instance and
         # converting it to a date so you are able to make a comparison.
         created_at_datetime = response.data.get('created_at')
-        datetime_object = datetime.strptime(
-            created_at_datetime, '%Y-%m-%dT%H:%M:%S.%fZ'
-        )
+
+        datetime_object = timezone.datetime.fromisoformat(
+            created_at_datetime[:-1]
+        ).replace(tzinfo=timezone.utc)
 
         created_at = datetime_object.date()
-        current_date = datetime.now().date()
+        current_date = timezone.now().date()
 
         self.assertEqual(created_at, current_date)
