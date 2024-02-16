@@ -467,11 +467,9 @@ class TestUserProfileModel(APITestCase):
         # Check if fields are set to read-only correctly
         for field, field_instance in fields.items():
             if field in read_only_fields:
-                print(f'READ ONLY FIELD: {field}')
                 self.assertTrue(field_instance.read_only)
 
             else:
-                print(f'WRITABLE FIELD: {field}')
                 self.assertFalse(field_instance.read_only)
 
     # Signal handler

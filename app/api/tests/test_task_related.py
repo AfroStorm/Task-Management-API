@@ -5,6 +5,7 @@ from django.utils import timezone
 from api import serializers, models, signals
 from django.contrib.auth import get_user_model
 from rest_framework import status
+from datetime import datetime
 from django.db.models.signals import post_save
 
 
@@ -852,3 +853,38 @@ class TestTaskModel(APITestCase):
 
         # Checks if the task group field is set to required false
         self.assertFalse(fields['task_group'].required)
+
+    # Signal handler test
+    def test_signal_handler_sets_completed_at_field_to_current_date(self):
+        """
+        Checks if the signal handler sets the completed_at 
+        datetimefield of of the task instance to the current date when 
+        the task status got set to completed.
+        """
+
+        # Task owner whos also a task_manager
+        self.regular_user1.profile.position.is_task_manager = True
+        self.client.force_authenticate(user=self.regular_user1)
+
+        # Created a Completed status instance
+        completed_status = models.Status.objects.create(
+            caption="Completed"
+        )
+
+        url = reverse('task-detail', args=[self.task1.id])
+        data = {
+            'status': completed_status.caption
+        }
+        response = self.client.patch(url, data, format='json')
+
+        # Retrieving the completed_at datetime of the task instance and
+        # converting it to a date so you are able to make a comparison.
+        created_at_datetime = response.data.get('created_at')
+        datetime_object = datetime.strptime(
+            created_at_datetime, '%Y-%m-%dT%H:%M:%S.%fZ'
+        )
+
+        created_at = datetime_object.date()
+        current_date = datetime.now().date()
+
+        self.assertEqual(created_at, current_date)
