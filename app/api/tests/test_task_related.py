@@ -605,7 +605,8 @@ class TestTaskModel(APITestCase):
 
         # List of expected read-only fields
         read_only_fields = [
-            'id', 'task_group', 'owner', 'created_at', 'completed_at'
+            'id', 'task_group', 'owner', 'created_at', 'completed_at',
+            'status'
         ]
 
         # Check if fields are set to read-only correctly

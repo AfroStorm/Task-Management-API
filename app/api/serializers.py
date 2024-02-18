@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from api import models
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 
@@ -278,6 +279,48 @@ class TaskSerializer(serializers.ModelSerializer):
             'task_group': {'required': False}
         }
 
+    def create(self, validated_data):
+        """
+        Checks if the due_date is not before the current
+        date.
+        """
+
+        if 'due_date' in validated_data:
+            if validated_data['due_date'] != None:
+
+                current_date = timezone.now()
+                due_date = validated_data['due_date']
+
+                if due_date <= current_date:
+                    raise ValidationError(
+                        '''
+                        The due_date cant be less or equal to the current date
+                        '''
+                    )
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Checks if the due_date is not before the current
+        date.
+        """
+
+        if 'due_date' in validated_data:
+            if validated_data['due_date'] != None:
+
+                current_date = timezone.now()
+                due_date = validated_data['due_date']
+
+                if due_date <= current_date:
+                    raise ValidationError(
+                        '''
+                        The due_date cant be less or equal to the current date
+                        '''
+                    )
+
+        return super().update(instance, validated_data)
+
     def get_fields(self):
         """Sets certain fields to read_only for non-staff users."""
 
@@ -291,7 +334,7 @@ class TaskSerializer(serializers.ModelSerializer):
             fields['task_group'].read_only = True
             fields['owner'].read_only = True
             fields['created_at'].read_only = True
-            fields['completed_at'].read_only = True
+            fields['status'].read_only = True
 
             return fields
 
@@ -334,7 +377,17 @@ class TaskResourceSerializer(serializers.ModelSerializer):
             'id', 'source_name', 'description', 'resource_link', 'task'
         ]
 
-    def validate(self, data):
+    def __init__(self, *args, **kwargs):
+        """
+        Gets the request user to give the update and create method
+        access to it.
+        """
+
+        # Get the request user from the context
+        self.request_user = kwargs.pop('request_user', None)
+        super().__init__(*args, **kwargs)
+
+    def create(self, validated_data):
         """
         Prevents users from assigning task resourcess to tasks of
         which they are not a team member.
@@ -343,26 +396,54 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         with the submitted data. Staff users are exempt from this validation.
         """
 
-        request = self.context['request']
+        request_user = self.request_user
 
-        if request and request.user.is_staff:
-            return data
+        if request_user.is_staff:
+            return validated_data
 
-        # Check if the submitted data contains an actual task instance to either update
-        # or create an task resource instance.
-        if 'task' in data:
-            task_instance = data['task']
+        # Check if the submitted data contains an actual task instance
+        # to either update or create an task resource instance.
+        if 'task' in validated_data:
+            task_instance = validated_data['task']
 
             # Check if the user is a team member of the selected task
-            if request.user.profile not in\
+            if request_user.profile not in\
                     task_instance.task_group.team_members.all():
                 raise ValidationError(
                     '''The requesting user is not a member of the selected task's
                     team.'''
                 )
 
-        # Return dta if the is no task instance in the submitted data
-        return data
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Prevents users from assigning task resourcess to tasks of
+        which they are not a team member.
+
+        This method checks if the user is a team member of the task associated
+        with the submitted data. Staff users are exempt from this validation.
+        """
+
+        request_user = self.request_user
+
+        if request_user.is_staff:
+            return validated_data
+
+        # Check if the submitted data contains an actual task instance
+        # to either update or create an task resource instance.
+        if 'task' in validated_data:
+            task_instance = validated_data['task']
+
+            # Check if the user is a team member of the selected task
+            if request_user.profile not in\
+                    task_instance.task_group.team_members.all():
+                raise ValidationError(
+                    '''The requesting user is not a member of the selected task's
+                    team.'''
+                )
+
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         """

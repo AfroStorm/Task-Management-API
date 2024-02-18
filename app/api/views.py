@@ -5,6 +5,7 @@ from api import serializers, models, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -267,42 +268,170 @@ class TaskView(ModelViewSet):
         'status', 'owner', 'task_group', 'completed_at'
     ]
 
+    # Status Change
+    @action(detail=True, methods=['PATCH'])
+    def change_status(self, request, pk):
+        """
+        Changes the status of a task and handles all necessary
+        modifictions that come with it, like changing dates
+        (e.g. Completed_at, due_date). Expects exactly one key value
+        pair.
+
+        Expected Key value pair (one of these):
+        - 'In Progress' - due_date value (to activate a task after it
+            has been archived)
+        - 'Completed' - completed_at value (to finish a task)
+        - 'Postponed' - due_date value (to mark a task as postponed)
+        - 'Archived' - None (to archive a task)
+        """
+
+        # Utility function
+        def changing_status(status, request_data, task_instance):
+            """
+            Implements the logic to change the status (e.g. 'In Progress',
+            'Completed') and set the provided values (e.g. due_date,
+            completed_at) for the task.
+            """
+
+            due_date = None
+            completed_at = None
+
+            if status == 'In Progress' or \
+                    status == 'Postponed' or \
+                    status == "Archived":
+                due_date = request_data[status]
+
+            elif status == 'Completed':
+                completed_at = request_data[status]
+
+            # Setting the required values for the serialization
+            request_data['status'] = status
+            if due_date:
+                request_data['due_date'] = due_date
+
+            elif completed_at:
+                request_data['completed_at'] = completed_at
+
+            # Removing the useless key value pair from the
+            # request data before serialization
+            request_data.pop(status, None)
+
+            serializer = self.get_serializer(
+                instance=task_instance,
+                data=request_data
+            )
+            if serializer.is_valid():
+                serializer.save()
+
+                return Response(
+                    {
+                        'message': f'The task got succesfully {status.lower()}'
+                    }
+                )
+
+            else:
+                errors = serializer.errors
+                return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(request.data) != 1:
+            return Response(
+                {
+                    'Error': '''Request.data is expected to have only
+                    1 key value pair'''
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        expected_statuses = [
+            'In Progress', 'Completed', 'Postponed', 'Archived'
+        ]
+        for status in expected_statuses:
+            if status in request.data:
+
+                task_instance = models.Task.objects.get(pk=pk)
+                changing_status(status, request.data, task_instance)
+
+            else:
+                return Response(
+                    {
+                        'Error': '''Key provided in the request.data doesnt
+                        exist within the system'''
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
     # Statistics for tasks
     @action(detail=False, methods=['GET'])
     def tasks_statistics(self, request):
         """
-        Gives a list of all the completed tasks and tasks in progress of which
-        the request user is the owner. Staff user can see all the tasks in the
-        system independent from ownership status.
+        Gives numbers of all the tasks acording to their statuses
+        within the last 3 months of which the request user is the
+        owner. Staff user can see all the tasks in the system 
+        independent from ownership status.
         """
 
-        current_date = timezone.now()
+        current_date = timezone.now().date()
         three_month_earlier = current_date - timezone.timedelta(days=60)
 
-        total_completed_tasks = models.Task.objects.filter(
-            status='Completed',
-        ).count()
-
+        # For staff users
         if request.user.is_staff:
-            total_completed_tasks = models.Task.objects.filter(
-                status='Completed'
+
+            completed_tasks = models.Task.objects.filter(
+                status='Completed',
+                completed_at__lte=current_date,
+                completed_at__gte=three_month_earlier
             ).count()
-            total_tasks_in_progress = models.Task.objects.filter(
+
+            postponed_tasks = models.Task.objects.filter(
+                status='Postponed',
+                completed_at__lte=current_date,
+                completed_at__gte=three_month_earlier
+            ).count()
+
+            archived_tasks = models.Task.objects.filter(
+                status='Archived',
+                completed_at__lte=current_date,
+                completed_at__gte=three_month_earlier
+            ).count()
+
+            tasks_in_progress = models.Task.objects.filter(
                 status='In Progress'
             ).count()
 
+        # For non staff users
         else:
-            total_completed_tasks = models.Task.objects.filter(
-                status='Completed', owner=request.user
+            completed_tasks = models.Task.objects.filter(
+                owner=request.user,
+                status='Completed',
+                completed_at__lte=current_date,
+                completed_at__gte=three_month_earlier
             ).count()
-            total_tasks_in_progress = models.Task.objects.filter(
-                status='In Progress', owner=request.user
+
+            postponed_tasks = models.Task.objects.filter(
+                owner=request.user,
+                status='Postponed',
+                completed_at__lte=current_date,
+                completed_at__gte=three_month_earlier
+            ).count()
+
+            archived_tasks = models.Task.objects.filter(
+                owner=request.user,
+                status='Archived',
+                completed_at__lte=current_date,
+                completed_at__gte=three_month_earlier
+            ).count()
+
+            tasks_in_progress = models.Task.objects.filter(
+                owner=request.user,
+                status='In Progress'
             ).count()
 
         return Response(
             {
-                'total_completed_tasks': total_completed_tasks,
-                'total_tasks_in_progress': total_tasks_in_progress
+                'completed_tasks (last 3 months)': completed_tasks,
+                'postponed_tasks (last 3 months)': postponed_tasks,
+                'archived_tasks (last 3 months)': archived_tasks,
+                'tasks_in_progress (last 3 months)': tasks_in_progress
             }
         )
 

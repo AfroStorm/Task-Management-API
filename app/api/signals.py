@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -59,12 +59,10 @@ def create_task_group(sender, instance, created, **kwargs):
 
 # Task - created_at field
 @receiver(post_save, sender=Task)
-def set_task_completion_date(sender, instance, created, **kwargs):
+def set_status_to_in_progress(sender, instance, created, **kwargs):
     """
-    Checks if the status of the task is completed and sets the completed_at
-    field of the task to the current date.
+    Sets the status to 'In Progress' for newly created task instances.
     """
 
-    if not instance.completed_at and instance.status == 'Completed':
-        instance.completed_at = timezone.now()
-        instance.save()
+    if created:
+        instance.status = 'In Progress'
