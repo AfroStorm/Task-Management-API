@@ -446,12 +446,13 @@ class TaskView(ModelViewSet):
             permission_classes = [IsAuthenticated]
 
         elif self.action == 'create' or \
-                self.action == 'tasks_statistics':
+                self.action == 'statistics':
             permission_classes = [IsAdminUser | permissions.IsTaskManager]
 
         elif self.action == 'update' or \
                 self.action == 'partial_update' or \
-                self.action == 'destroy':
+                self.action == 'destroy' or \
+                self.action == 'change_status':
             permission_classes = [
                 IsAdminUser | permissions.IsOwner & permissions.IsTaskManager
             ]
