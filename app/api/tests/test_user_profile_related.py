@@ -73,6 +73,7 @@ class TestUserProfileModel(APITestCase):
             position=self.human_resource_position
         )
         self.regular_userprofile2 = models.UserProfile.objects.create(
+            owner=self.regular_user2,
             first_name='Chris',
             last_name='Tucker',
             phone_number=int('0176339934'),

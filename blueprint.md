@@ -70,9 +70,7 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - POINT 7 - write tests: TaskView.tasks_statistics()
 
-- The owner shouldnt be able to change the status of the task at all
-- finish the different cases for status changes within the view action of the taskview
-
+- Finish the taskresource serializer methods create/update
 
 - Create an api documentation for the project.
 

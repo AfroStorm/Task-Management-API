@@ -43,8 +43,7 @@ class TestTaskModel(APITestCase):
         )
 
         # Status instance
-        caption = 'In Progress'
-        self.status = models.Status.objects.create(caption=caption)
+        self.status = models.Status.objects.create(caption='In Progress')
 
         # Creating category instances
         self.human_resource_category = models.Category.objects.create(
@@ -113,7 +112,7 @@ class TestTaskModel(APITestCase):
         self.task1 = models.Task.objects.create(
             title='The first Task',
             description='The task to be tested.',
-            due_date=date(2023, 1, 15),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -125,7 +124,7 @@ class TestTaskModel(APITestCase):
         self.task2 = models.Task.objects.create(
             title='The second Task',
             description='The task to be tested.',
-            due_date=date(2023, 1, 15),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -213,7 +212,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -237,7 +236,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -258,7 +257,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -277,7 +276,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -301,7 +300,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -328,7 +327,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -355,7 +354,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -376,7 +375,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -397,7 +396,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -417,7 +416,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -439,7 +438,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'Partially updated task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
         }
         response = self.client.patch(url, data, format='json')
@@ -458,7 +457,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
         }
         response = self.client.patch(url, data, format='json')
@@ -477,7 +476,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
         }
         response = self.client.patch(url, data, format='json')
@@ -495,7 +494,7 @@ class TestTaskModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
         }
         response = self.client.patch(url, data, format='json')
@@ -857,8 +856,8 @@ class TestTaskModel(APITestCase):
     # Signal handler test
     def test_signal_handler_sets_completed_at_field_to_current_date(self):
         """
-        Checks if the signal handler sets the completed_at 
-        datetimefield of of the task instance to the current date when 
+        Checks if the signal handler sets the completed_at
+        datetimefield of of the task instance to the current date when
         the task status got set to completed.
         """
 

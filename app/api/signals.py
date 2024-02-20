@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from api.models import UserProfile, Task, TaskGroup, Position
+from api import models
 
 User = get_user_model()
 
@@ -16,7 +16,7 @@ def create_or_update_profile(sender, instance, created, **kwargs):
 
     # If a task was created and no profile already exists
     if created and not hasattr(instance, 'profile'):
-        profile = UserProfile.objects.create(
+        profile = models.UserProfile.objects.create(
             owner=instance,
             email=instance.email
         )
@@ -31,14 +31,14 @@ def create_or_update_profile(sender, instance, created, **kwargs):
 
 
 # Task - TaskGroup creation
-@receiver(post_save, sender=Task)
+@receiver(post_save, sender=models.Task)
 def create_task_group(sender, instance, created, **kwargs):
     """Signal handler to create a new TaskGroup instance for each new Task
     instance.
     """
 
     if created and not instance.task_group:
-        task_group = TaskGroup.objects.create(
+        task_group = models.TaskGroup.objects.create(
             name=f'TaskGroup of {instance.title}'
         )
         instance.task_group = task_group
@@ -48,7 +48,7 @@ def create_task_group(sender, instance, created, **kwargs):
 
         # Adds sample positions to the suggested_positions field
         if instance.category:
-            positions = Position.objects.filter(
+            positions = models.Position.objects.filter(
                 category=instance.category
             ).distinct().order_by('id')[:4]
 
@@ -58,11 +58,14 @@ def create_task_group(sender, instance, created, **kwargs):
 
 
 # Task - created_at field
-@receiver(post_save, sender=Task)
+@receiver(post_save, sender=models.Task)
 def set_status_to_in_progress(sender, instance, created, **kwargs):
     """
     Sets the status to 'In Progress' for newly created task instances.
     """
 
     if created:
-        instance.status = 'In Progress'
+        in_progress_status, created = models.Status.objects.get_or_create(
+            caption='In Progress'
+        )
+        instance.status = in_progress_status

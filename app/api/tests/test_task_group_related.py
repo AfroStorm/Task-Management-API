@@ -1,5 +1,5 @@
 from rest_framework.test import APITestCase
-from datetime import date
+from django.utils import timezone
 from api.serializers import TaskGroupSerializer
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -76,6 +76,7 @@ class TestTaskGroupModel(APITestCase):
             position=self.human_resource_position
         )
         self.regular_userprofile2 = models.UserProfile.objects.create(
+            owner=self.regular_user2,
             first_name='Chris',
             last_name='Tucker',
             phone_number=int('0176339934'),
@@ -121,7 +122,7 @@ class TestTaskGroupModel(APITestCase):
         self.task1 = models.Task.objects.create(
             title='The first Task',
             description='The task to be tested.',
-            due_date=date(2023, 1, 15),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -131,7 +132,7 @@ class TestTaskGroupModel(APITestCase):
         self.task2 = models.Task.objects.create(
             title='The second Task',
             description='The task to be tested.',
-            due_date=date(2023, 1, 15),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -217,7 +218,7 @@ class TestTaskGroupModel(APITestCase):
         new_task = models.Task.objects.create(
             title='The new Task',
             description='The new task to be tested.',
-            due_date=date(2023, 1, 20),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -247,7 +248,7 @@ class TestTaskGroupModel(APITestCase):
         new_task = models.Task.objects.create(
             title='The new Task',
             description='The new task to be tested.',
-            due_date=date(2023, 1, 20),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -275,7 +276,7 @@ class TestTaskGroupModel(APITestCase):
         new_task = models.Task.objects.create(
             title='The new Task',
             description='The new task to be tested.',
-            due_date=date(2023, 1, 20),
+            due_date=timezone.now().date() + timezone.timedelta(days=2),
             category=self.human_resource_category,
             priority=self.priority,
             status=self.status,
@@ -722,7 +723,7 @@ class TestTaskGroupModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -763,7 +764,7 @@ class TestTaskGroupModel(APITestCase):
             'owner': self.regular_user1.email,
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,
@@ -826,7 +827,7 @@ class TestTaskGroupModel(APITestCase):
         data = {
             'title': 'The first Task',
             'description': 'The task to be tested.',
-            'due_date': date(2023, 1, 15),
+            'due_date': timezone.now().date() + timezone.timedelta(days=2),
             'category': self.human_resource_category.name,
             'priority': self.priority.caption,
             'status': self.status.caption,

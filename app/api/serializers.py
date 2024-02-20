@@ -288,7 +288,7 @@ class TaskSerializer(serializers.ModelSerializer):
         if 'due_date' in validated_data:
             if validated_data['due_date'] != None:
 
-                current_date = timezone.now()
+                current_date = timezone.now().date()
                 due_date = validated_data['due_date']
 
                 if due_date <= current_date:
@@ -309,7 +309,7 @@ class TaskSerializer(serializers.ModelSerializer):
         if 'due_date' in validated_data:
             if validated_data['due_date'] != None:
 
-                current_date = timezone.now()
+                current_date = timezone.now().date()
                 due_date = validated_data['due_date']
 
                 if due_date <= current_date:
@@ -335,6 +335,7 @@ class TaskSerializer(serializers.ModelSerializer):
             fields['owner'].read_only = True
             fields['created_at'].read_only = True
             fields['status'].read_only = True
+            fields['completed_at'].read_only = True
 
             return fields
 
@@ -376,16 +377,11 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'source_name', 'description', 'resource_link', 'task'
         ]
-
-    def __init__(self, *args, **kwargs):
-        """
-        Gets the request user to give the update and create method
-        access to it.
-        """
-
-        # Get the request user from the context
-        self.request_user = kwargs.pop('request_user', None)
-        super().__init__(*args, **kwargs)
+        extra_kwargs = {
+            'resource_link': {'required': False},
+            # 'description': {'required': False},
+            # 'source_name': {'required': False},
+        }
 
     def create(self, validated_data):
         """
@@ -396,18 +392,18 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         with the submitted data. Staff users are exempt from this validation.
         """
 
-        request_user = self.request_user
+        request = self.context.get('request')
 
-        if request_user.is_staff:
+        if request and request.user.is_staff:
             return validated_data
 
         # Check if the submitted data contains an actual task instance
         # to either update or create an task resource instance.
-        if 'task' in validated_data:
+        if request and 'task' in validated_data:
             task_instance = validated_data['task']
 
             # Check if the user is a team member of the selected task
-            if request_user.profile not in\
+            if request.user.profile not in\
                     task_instance.task_group.team_members.all():
                 raise ValidationError(
                     '''The requesting user is not a member of the selected task's
@@ -425,10 +421,10 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         with the submitted data. Staff users are exempt from this validation.
         """
 
-        request_user = self.request_user
+        request = self.context.get('request')
 
-        if request_user.is_staff:
-            return validated_data
+        if request and request.user.is_staff:
+            return super().update(instance, validated_data)
 
         # Check if the submitted data contains an actual task instance
         # to either update or create an task resource instance.
@@ -436,7 +432,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
             task_instance = validated_data['task']
 
             # Check if the user is a team member of the selected task
-            if request_user.profile not in\
+            if request.user.profile not in\
                     task_instance.task_group.team_members.all():
                 raise ValidationError(
                     '''The requesting user is not a member of the selected task's

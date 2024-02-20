@@ -1,5 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
+from django.forms.models import model_to_dict
 from datetime import date
 from api import models, serializers, signals
 from django.contrib.auth import get_user_model
@@ -83,6 +84,7 @@ class TestsTaskResourceModel(APITestCase):
             position=self.human_resource_position
         )
         self.regular_userprofile2 = models.UserProfile.objects.create(
+            owner=self.regular_user2,
             first_name='Chris',
             last_name='Tucker',
             phone_number=int('0176339934'),
@@ -589,3 +591,154 @@ class TestsTaskResourceModel(APITestCase):
 
         # Double-check with purposely wrong data
         self.assertNotEqual(representation_data, false_data)
+
+    def test_serializer_create_method_restricts_non_team_member(self):
+        """
+        Checks if the create method of the serializer prevents the
+        request user from assigning a task resource to a task of which
+        he is not a team member.
+        """
+
+        # Creating a Request object to pass it into the serializer
+        # (conditionals of the create method require it)
+        attributes = {'user': self.regular_user1}
+        Request = type('Request', (object,), attributes)()
+
+        data = {
+            'source_name': 'Another Image',
+            'description': 'Another descripion text for the instance',
+            'resource_link': 'https://www.example.com/sample-page',
+            'task': self.task2.id
+        }
+
+        # Create serialization
+        serializer = serializers.TaskResourceSerializer(
+            data=data,
+            context={'request': Request},
+        )
+        serializer.is_valid()
+
+        # Check if the serializer throws a validationerror when the
+        # request user tries to connect a taskresource instance to
+        # a task instance of which he is not a team member
+        with self.assertRaises(serializers.ValidationError):
+            serializer.create(
+                validated_data=serializer.validated_data
+            )
+
+    def test_serializer_update_method_restricts_non_team_member(self):
+        """
+        Checks if the update method of the serializer prevents the
+        request user from assigning a task resource to a task of which
+        he is not a team member.
+        """
+
+        # Creating a Request object to pass it into the serializer
+        # (conditionals of the update method require it)
+        attributes = {'user': self.regular_user1}
+        Request = type('Request', (object,), attributes)()
+
+        data = {
+            'task': self.task2.id
+        }
+
+        # partial update serialization
+        serializer = serializers.TaskResourceSerializer(
+            data=data,
+            instance=self.task_resource1,
+            context={'request': Request},
+            partial=True
+        )
+        serializer.is_valid()
+
+        # Check if the serializer throws a validationerror when the
+        # request user tries to connect a taskresource instance to
+        # a task instance of which he is not a team member
+        with self.assertRaises(serializers.ValidationError):
+            serializer.update(
+                instance=self.task_resource1,
+                validated_data=serializer.validated_data
+            )
+
+    def test_serializer_create_method_staff_user(self):
+        """
+        Checks if the create method of the serializer allows the
+        request staff user to assign a task resource to any task.
+        """
+
+        # Creating a Request object to pass it into the serializer
+        # (conditionals of the update method require it)
+        attributes = {'user': self.admin_user}
+        Request = type('Request', (object,), attributes)()
+
+        data = {
+            'source_name': 'Another Image',
+            'description': 'Another descripion text for the instance',
+            'resource_link': 'https://www.example.com/sample-page',
+            'task': self.task2.id
+        }
+
+        # Create serialization
+        serializer = serializers.TaskResourceSerializer(
+            data=data,
+            context={'request': Request},
+        )
+        serializer.is_valid()
+
+        created_instance = serializer.create(
+            validated_data=serializer.validated_data
+        )
+
+        # Preparing the expected data for the comparison with
+        # the actual updated data by first converting the task
+        # resource instance  into a dictionry and then manually
+        # updating the task field with the expected value
+        expected_data_dict = model_to_dict(self.task_resource1)
+        expected_data_dict['task'] = self.task2.id
+
+        # Also converting the updated instance into a dict for
+        # comparison
+        updated_data_dict = model_to_dict(created_instance)
+
+        self.assertEqual(updated_data_dict, expected_data_dict)
+
+    def test_serializer_update_method_staff_user(self):
+        """
+        Checks if the update method of the serializer allows the
+        request staff user to assign a task resource to any task.
+        """
+
+        # Creating a Request object to pass it into the serializer
+        # (conditionals of the update method require it)
+        attributes = {'user': self.admin_user}
+        Request = type('Request', (object,), attributes)()
+
+        data = {
+            'task': self.task2.id
+        }
+
+        # partial update serializattion
+        serializer = serializers.TaskResourceSerializer(
+            data=data,
+            instance=self.task_resource1,
+            context={'request': Request},
+            partial=True
+        )
+        serializer.is_valid()
+        updated_instance = serializer.update(
+            instance=self.task_resource1,
+            validated_data=serializer.validated_data
+        )
+
+        # Preparing the expected data for the comparison with
+        # the actual updated data by first converting the task
+        # resource instance  into a dictionry and then manually
+        # updating the task field with the expected value
+        expected_data_dict = model_to_dict(self.task_resource1)
+        expected_data_dict['task'] = self.task2.id
+
+        # Also converting the updated instance into a dict for
+        # comparison
+        updated_data_dict = model_to_dict(updated_instance)
+
+        self.assertEqual(updated_data_dict, expected_data_dict)
