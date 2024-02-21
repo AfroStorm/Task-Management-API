@@ -6,6 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import get_object_or_404
 from rest_framework.settings import api_settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -274,91 +275,56 @@ class TaskView(ModelViewSet):
         """
         Changes the status of a task and handles all necessary
         modifictions that come with it, like changing dates
-        (e.g. Completed_at, due_date). Expects exactly one key value
-        pair.
+        (e.g. Completed_at, due_date). Expects an json array of
+        objects (key value pairs)
 
         Expected Key value pair (one of these):
-        - 'In Progress' - due_date value (to activate a task after it
-            has been archived)
-        - 'Completed' - completed_at value (to finish a task)
-        - 'Postponed' - due_date value (to mark a task as postponed)
-        - 'Archived' - None (to archive a task)
+        - In Progress -
+          [{"status": "In Progress"}, {"due_date": "datetime"}]
+          (to activate a task after it has been archived)
+        - Postponed -
+          [{"status": "Postponed"}, {"due_date": "datetime"}]
+          (to mark a task as postponed)
+        - Archived -
+          [{"status": "Archived"}, {"due_date": "null"}]
+          (to archive a task)
+        - Completed -
+          [{"status": "Completed"}, {"completed_at": "datetime"}]
+          (to finish a task)
         """
 
-        # Utility function
-        def changing_status(status, request_data, task_instance):
-            """
-            Implements the logic to change the status (e.g. 'In Progress',
-            'Completed') and set the provided values (e.g. due_date,
-            completed_at) for the task.
-            """
-
-            due_date = None
-            completed_at = None
-
-            if status == 'In Progress' or \
-                    status == 'Postponed' or \
-                    status == "Archived":
-                due_date = request_data[status]
-
-            elif status == 'Completed':
-                completed_at = request_data[status]
-
-            # Setting the required values for the serialization
-            request_data['status'] = status
-            if due_date:
-                request_data['due_date'] = due_date
-
-            elif completed_at:
-                request_data['completed_at'] = completed_at
-
-            # Removing the useless key value pair from the
-            # request data before serialization
-            request_data.pop(status, None)
-
-            serializer = self.get_serializer(
-                instance=task_instance,
-                data=request_data
-            )
-            if serializer.is_valid():
-                serializer.save()
-
-                return Response(
-                    {
-                        'message': f'The task got succesfully {status.lower()}'
-                    }
-                )
-
-            else:
-                errors = serializer.errors
-                return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        if len(request.data) != 1:
+        if len(request.data) != 2:
             return Response(
                 {
-                    'Error': '''Request.data is expected to have only
-                    1 key value pair'''
+                    'Error': '''Request.data expects a json array of 2 objects
+                    (e.g.
+                    [{"status": "In Progress"},{"due_date": "datetime"}])'''
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        expected_statuses = [
-            'In Progress', 'Completed', 'Postponed', 'Archived'
-        ]
-        for status in expected_statuses:
-            if status in request.data:
+        task_instance = get_object_or_404(models.Task, pk=pk)
 
-                task_instance = models.Task.objects.get(pk=pk)
-                changing_status(status, request.data, task_instance)
+        serializer = serializers.StatusChangeSerializer(
+            instance=task_instance,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    'Message': '''Task status was successfully updated'''
+                },
+                status=status.HTTP_200_OK
+            )
 
-            else:
-                return Response(
-                    {
-                        'Error': '''Key provided in the request.data doesnt
-                        exist within the system'''
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        return Response(
+            {
+                'Error': '400 Bad Request', 'Details': serializer.errors
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     # Statistics for tasks
     @action(detail=False, methods=['GET'])

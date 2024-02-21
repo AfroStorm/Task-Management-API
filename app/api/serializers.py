@@ -7,6 +7,8 @@ from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
+# Modelserializer
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
     """
@@ -279,11 +281,13 @@ class TaskSerializer(serializers.ModelSerializer):
             'task_group': {'required': False}
         }
 
-    def create(self, validated_data):
+    def validate(self, attrs):
         """
         Checks if the due_date is not before the current
         date.
         """
+
+        validated_data = super().validate(attrs)
 
         if 'due_date' in validated_data:
             if validated_data['due_date'] != None:
@@ -298,28 +302,7 @@ class TaskSerializer(serializers.ModelSerializer):
                         '''
                     )
 
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        """
-        Checks if the due_date is not before the current
-        date.
-        """
-
-        if 'due_date' in validated_data:
-            if validated_data['due_date'] != None:
-
-                current_date = timezone.now().date()
-                due_date = validated_data['due_date']
-
-                if due_date <= current_date:
-                    raise ValidationError(
-                        '''
-                        The due_date cant be less or equal to the current date
-                        '''
-                    )
-
-        return super().update(instance, validated_data)
+        return validated_data
 
     def get_fields(self):
         """Sets certain fields to read_only for non-staff users."""
@@ -379,11 +362,9 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'resource_link': {'required': False},
-            # 'description': {'required': False},
-            # 'source_name': {'required': False},
         }
 
-    def create(self, validated_data):
+    def validate(self, attrs):
         """
         Prevents users from assigning task resourcess to tasks of
         which they are not a team member.
@@ -392,6 +373,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         with the submitted data. Staff users are exempt from this validation.
         """
 
+        validated_data = super().validate(attrs)
         request = self.context.get('request')
 
         if request and request.user.is_staff:
@@ -410,36 +392,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
                     team.'''
                 )
 
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        """
-        Prevents users from assigning task resourcess to tasks of
-        which they are not a team member.
-
-        This method checks if the user is a team member of the task associated
-        with the submitted data. Staff users are exempt from this validation.
-        """
-
-        request = self.context.get('request')
-
-        if request and request.user.is_staff:
-            return super().update(instance, validated_data)
-
-        # Check if the submitted data contains an actual task instance
-        # to either update or create an task resource instance.
-        if 'task' in validated_data:
-            task_instance = validated_data['task']
-
-            # Check if the user is a team member of the selected task
-            if request.user.profile not in\
-                    task_instance.task_group.team_members.all():
-                raise ValidationError(
-                    '''The requesting user is not a member of the selected task's
-                    team.'''
-                )
-
-        return super().update(instance, validated_data)
+        return validated_data
 
     def to_representation(self, instance):
         """
@@ -462,3 +415,84 @@ class TaskResourceSerializer(serializers.ModelSerializer):
                 in instance.task.task_group.team_members.all():
 
             return data
+
+
+# Customserializer
+class StatusChangeSerializer(serializers.Serializer):
+    """
+    A custom serializer for the change_status view action of the task
+    view.
+    """
+
+    status = serializers.ChoiceField(
+        choices=['In Progress', 'Postponed', 'Archived', 'Completed']
+    )
+    due_date = serializers.DateTimeField(required=False)
+    completed_at = serializers.DateTimeField(required=False)
+
+    def validate(self, attrs):
+        """
+        Checks if the validated data is in the correct relationship
+        to each other and if the due_date is set up correctly
+        (not before or equal to current date).
+        """
+
+        validated_data = super().validate(attrs)
+        status = validated_data.get('status')
+
+        # Certain statuses can only come with specific date fields
+        # (e.g. {"status": "In Progress"},{"due_date": "datetime"},
+        # {"status": "Completed"},{"ducompleted_ate_date": "datetime"})
+        if status in ['In Progress', 'Postponed']:
+            if 'due_date' not in validated_data:
+                raise serializers.ValidationError(
+                    '''
+                    The 'due_date' field is required for 'In Progress' or
+                    'Postponed' status.
+                    '''
+                )
+
+        elif status == 'Archived':
+            if 'due_date' in validated_data and \
+                    validated_data.get('due_date') is not None:
+                raise serializers.ValidationError(
+                    '''
+                    The 'due_date' field should be None for 'Archived' status.
+                    '''
+                )
+
+        elif status == 'Completed':
+            if 'completed_at' not in validated_data:
+                raise serializers.ValidationError(
+                    '''
+                    The 'completed_at' field is required for 'Completed' 
+                    status.
+                    '''
+                )
+
+        # The due_date cant be equal or less to the current_date
+        if 'due_date' in validated_data and \
+                validated_data.get('due_date') is not None:
+
+            current_date = timezone.now().date()
+            due_date = validated_data.get('due_date')
+
+            if due_date <= current_date:
+                raise ValidationError(
+                    '''
+                    The due_date cant be less or equal to the current_date
+                    '''
+                )
+
+        return validated_data
+
+    def update(self, instance, validated_data):
+        """
+        Updates the fields of the task instance.
+        """
+        instance.status = validated_data.get('status')
+        instance.due_date = validated_data.get('due_date')
+        instance.completed_at = validated_data.get('completed_at')
+        instance.save()
+
+        return instance

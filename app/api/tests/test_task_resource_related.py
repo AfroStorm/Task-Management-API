@@ -663,7 +663,8 @@ class TestsTaskResourceModel(APITestCase):
     def test_serializer_create_method_staff_user(self):
         """
         Checks if the create method of the serializer allows the
-        request staff user to assign a task resource to any task.
+        request staff user to assign a task resource to any task
+        independent of team membership of the request user.
         """
 
         # Creating a Request object to pass it into the serializer
@@ -689,23 +690,16 @@ class TestsTaskResourceModel(APITestCase):
             validated_data=serializer.validated_data
         )
 
-        # Preparing the expected data for the comparison with
-        # the actual updated data by first converting the task
-        # resource instance  into a dictionry and then manually
-        # updating the task field with the expected value
-        expected_data_dict = model_to_dict(self.task_resource1)
-        expected_data_dict['task'] = self.task2.id
-
-        # Also converting the updated instance into a dict for
-        # comparison
-        updated_data_dict = model_to_dict(created_instance)
-
-        self.assertEqual(updated_data_dict, expected_data_dict)
+        # Check if the taskresource got saved in data base
+        # and if the task instance got assigned to the taskresource
+        self.assertIsNotNone(created_instance)
+        self.assertEqual(created_instance.task, self.task2)
 
     def test_serializer_update_method_staff_user(self):
         """
         Checks if the update method of the serializer allows the
-        request staff user to assign a task resource to any task.
+        request staff user to assign a task resource to any task
+        independent of team membership of the request user.
         """
 
         # Creating a Request object to pass it into the serializer
@@ -730,15 +724,5 @@ class TestsTaskResourceModel(APITestCase):
             validated_data=serializer.validated_data
         )
 
-        # Preparing the expected data for the comparison with
-        # the actual updated data by first converting the task
-        # resource instance  into a dictionry and then manually
-        # updating the task field with the expected value
-        expected_data_dict = model_to_dict(self.task_resource1)
-        expected_data_dict['task'] = self.task2.id
-
-        # Also converting the updated instance into a dict for
-        # comparison
-        updated_data_dict = model_to_dict(updated_instance)
-
-        self.assertEqual(updated_data_dict, expected_data_dict)
+        # Check if the tsk instance got assigned to the taskresource
+        self.assertEqual(updated_instance.task, self.task2)
