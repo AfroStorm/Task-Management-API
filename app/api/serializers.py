@@ -380,7 +380,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
             return validated_data
 
         # Check if the submitted data contains an actual task instance
-        # to either update or create an task resource instance.
+        # to either update or create a task resource instance.
         if request and 'task' in validated_data:
             task_instance = validated_data['task']
 
