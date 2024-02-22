@@ -70,7 +70,6 @@ This project provides a good balance of CRUD operations, user authentication, an
 
 - POINT 7 - write tests: TaskView.tasks_statistics()
 
-         - Move the task/taskresource update/create validtion logic into the validate method
          Write tests for task/taskresource serializer validate method (dont test validate method directly rather use instance.save()).
          Create endpoints for TaskView change_status action.
          Write tests for the TaskView change_status action.

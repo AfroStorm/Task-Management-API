@@ -1,4 +1,4 @@
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIRequestFactory
 from rest_framework import status
 from django.forms.models import model_to_dict
 from datetime import date
@@ -592,137 +592,68 @@ class TestsTaskResourceModel(APITestCase):
         # Double-check with purposely wrong data
         self.assertNotEqual(representation_data, false_data)
 
-    def test_serializer_create_method_restricts_non_team_member(self):
+    def test_serializer_validate_method_restricts_non_team_member(self):
         """
-        Checks if the create method of the serializer prevents the
+        Checks if the validate method of the serializer prevents the
         request user from assigning a task resource to a task of which
-        he is not a team member.
+        he is not a team member. Staff users are exempt from this.
         """
+
+        # --NON-TEAM MEMBER--
 
         # Creating a Request object to pass it into the serializer
         # (conditionals of the create method require it)
-        attributes = {'user': self.regular_user1}
-        Request = type('Request', (object,), attributes)()
+        url = reverse('taskresource-list')
+        api_request_factory = APIRequestFactory()
+        Request = api_request_factory.get(url)
+        non_team_member = self.regular_user1
+        Request.user = non_team_member
 
+        # Since the serializer validate method expects full instances
+        # the data cant contain just the task id
         data = {
             'source_name': 'Another Image',
             'description': 'Another descripion text for the instance',
             'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task2.id
+            'task': self.task2
         }
 
-        # Create serialization
         serializer = serializers.TaskResourceSerializer(
-            data=data,
-            context={'request': Request},
+            context={'request': Request}
         )
-        serializer.is_valid()
 
-        # Check if the serializer throws a validationerror when the
-        # request user tries to connect a taskresource instance to
-        # a task instance of which he is not a team member
+        # Checks if the non team member raises an error
         with self.assertRaises(serializers.ValidationError):
-            serializer.create(
-                validated_data=serializer.validated_data
-            )
+            serializer.validate(data)
 
-    def test_serializer_update_method_restricts_non_team_member(self):
-        """
-        Checks if the update method of the serializer prevents the
-        request user from assigning a task resource to a task of which
-        he is not a team member.
-        """
+        # --TEAM MEMBER--
 
         # Creating a Request object to pass it into the serializer
-        # (conditionals of the update method require it)
-        attributes = {'user': self.regular_user1}
-        Request = type('Request', (object,), attributes)()
+        # (conditionals of the create method require it)
+        team_member = self.regular_user2
+        Request.user = team_member
 
-        data = {
-            'task': self.task2.id
-        }
-
-        # partial update serialization
         serializer = serializers.TaskResourceSerializer(
-            data=data,
-            instance=self.task_resource1,
-            context={'request': Request},
-            partial=True
+            context={'request': Request}
         )
-        serializer.is_valid()
+        validated_data = serializer.validate(data)
 
-        # Check if the serializer throws a validationerror when the
-        # request user tries to connect a taskresource instance to
-        # a task instance of which he is not a team member
-        with self.assertRaises(serializers.ValidationError):
-            serializer.update(
-                instance=self.task_resource1,
-                validated_data=serializer.validated_data
-            )
+        # Checkfs if the validated_data is identical to the
+        # request.data
+        self.assertEqual(validated_data, data)
 
-    def test_serializer_create_method_staff_user(self):
-        """
-        Checks if the create method of the serializer allows the
-        request staff user to assign a task resource to any task
-        independent of team membership of the request user.
-        """
+        # --STAFF USER--
 
         # Creating a Request object to pass it into the serializer
-        # (conditionals of the update method require it)
-        attributes = {'user': self.admin_user}
-        Request = type('Request', (object,), attributes)()
+        # (conditionals of the create method require it)
+        team_member = self.admin_user
+        Request.user = team_member
 
-        data = {
-            'source_name': 'Another Image',
-            'description': 'Another descripion text for the instance',
-            'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task2.id
-        }
-
-        # Create serialization
         serializer = serializers.TaskResourceSerializer(
-            data=data,
             context={'request': Request},
         )
-        serializer.is_valid()
+        validated_data = serializer.validate(data)
 
-        created_instance = serializer.create(
-            validated_data=serializer.validated_data
-        )
-
-        # Check if the taskresource got saved in data base
-        # and if the task instance got assigned to the taskresource
-        self.assertIsNotNone(created_instance)
-        self.assertEqual(created_instance.task, self.task2)
-
-    def test_serializer_update_method_staff_user(self):
-        """
-        Checks if the update method of the serializer allows the
-        request staff user to assign a task resource to any task
-        independent of team membership of the request user.
-        """
-
-        # Creating a Request object to pass it into the serializer
-        # (conditionals of the update method require it)
-        attributes = {'user': self.admin_user}
-        Request = type('Request', (object,), attributes)()
-
-        data = {
-            'task': self.task2.id
-        }
-
-        # partial update serializattion
-        serializer = serializers.TaskResourceSerializer(
-            data=data,
-            instance=self.task_resource1,
-            context={'request': Request},
-            partial=True
-        )
-        serializer.is_valid()
-        updated_instance = serializer.update(
-            instance=self.task_resource1,
-            validated_data=serializer.validated_data
-        )
-
-        # Check if the tsk instance got assigned to the taskresource
-        self.assertEqual(updated_instance.task, self.task2)
+        # Checkfs if the validated_data is identical to the
+        # request.data
+        self.assertEqual(validated_data, data)

@@ -7,9 +7,8 @@ from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
+
 # Modelserializer
-
-
 class CustomUserSerializer(serializers.ModelSerializer):
     """
     Serializer for the CustomUser model.
