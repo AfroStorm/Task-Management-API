@@ -280,28 +280,25 @@ class TaskSerializer(serializers.ModelSerializer):
             'task_group': {'required': False}
         }
 
-    def validate(self, attrs):
+    def validate_due_date(self, value):
         """
         Checks if the due_date is not before the current
         date.
+
         """
+        due_date = value
+        if due_date is not None:
 
-        validated_data = super().validate(attrs)
+            current_date = timezone.now()
 
-        if 'due_date' in validated_data:
-            if validated_data['due_date'] != None:
-
-                current_date = timezone.now().date()
-                due_date = validated_data['due_date']
-
-                if due_date <= current_date:
-                    raise ValidationError(
+            if due_date <= current_date:
+                raise ValidationError(
+                    '''
+                        The due_date cant be less or equal to the current date.
                         '''
-                        The due_date cant be less or equal to the current date
-                        '''
-                    )
+                )
 
-        return validated_data
+        return due_date
 
     def get_fields(self):
         """Sets certain fields to read_only for non-staff users."""
@@ -363,7 +360,7 @@ class TaskResourceSerializer(serializers.ModelSerializer):
             'resource_link': {'required': False},
         }
 
-    def validate(self, attrs):
+    def validate_task(self, value):
         """
         Prevents users from assigning task resourcess to tasks of
         which they are not a team member.
@@ -372,26 +369,26 @@ class TaskResourceSerializer(serializers.ModelSerializer):
         with the submitted data. Staff users are exempt from this validation.
         """
 
-        validated_data = super().validate(attrs)
         request = self.context.get('request')
 
-        if request and request.user.is_staff:
-            return validated_data
+        if value and request:
+            if request.user.is_staff:
+                return value
 
-        # Check if the submitted data contains an actual task instance
-        # to either update or create a task resource instance.
-        if request and 'task' in validated_data:
-            task_instance = validated_data['task']
+            # Check if the submitted data contains an actual task instance
+            # to either update or create a task resource instance.
+            else:
+                task_instance = value
 
-            # Check if the user is a team member of the selected task
-            if request.user.profile not in\
-                    task_instance.task_group.team_members.all():
-                raise ValidationError(
-                    '''The requesting user is not a member of the selected task's
-                    team.'''
-                )
+                # Check if the user is a team member of the selected task
+                if request.user.profile not in\
+                        task_instance.task_group.team_members.all():
+                    raise ValidationError(
+                        '''The requesting user is not a member of the selected task's
+                        team.'''
+                    )
 
-        return validated_data
+        return value
 
     def to_representation(self, instance):
         """

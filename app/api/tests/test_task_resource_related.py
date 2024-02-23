@@ -592,11 +592,12 @@ class TestsTaskResourceModel(APITestCase):
         # Double-check with purposely wrong data
         self.assertNotEqual(representation_data, false_data)
 
-    def test_serializer_validate_method_restricts_non_team_member(self):
+    def test_serializer_validate_task_restricts_non_team_member(self):
         """
-        Checks if the validate method of the serializer prevents the
-        request user from assigning a task resource to a task of which
-        he is not a team member. Staff users are exempt from this.
+        Checks if the validate_task method of the task serializer
+        prevents the request user from assigning a task resource
+        to a task of which he is not a team member. Staff users are
+        exempt from this.
         """
 
         # --NON-TEAM MEMBER--
@@ -611,12 +612,7 @@ class TestsTaskResourceModel(APITestCase):
 
         # Since the serializer validate method expects full instances
         # the data cant contain just the task id
-        data = {
-            'source_name': 'Another Image',
-            'description': 'Another descripion text for the instance',
-            'resource_link': 'https://www.example.com/sample-page',
-            'task': self.task2
-        }
+        task = self.task2
 
         serializer = serializers.TaskResourceSerializer(
             context={'request': Request}
@@ -624,7 +620,7 @@ class TestsTaskResourceModel(APITestCase):
 
         # Checks if the non team member raises an error
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate(data)
+            serializer.validate_task(task)
 
         # --TEAM MEMBER--
 
@@ -636,11 +632,10 @@ class TestsTaskResourceModel(APITestCase):
         serializer = serializers.TaskResourceSerializer(
             context={'request': Request}
         )
-        validated_data = serializer.validate(data)
+        validated_task = serializer.validate_task(task)
 
-        # Checkfs if the validated_data is identical to the
-        # request.data
-        self.assertEqual(validated_data, data)
+        # Checks if the validate_task method raises no error
+        self.assertEqual(validated_task, task)
 
         # --STAFF USER--
 
@@ -652,8 +647,7 @@ class TestsTaskResourceModel(APITestCase):
         serializer = serializers.TaskResourceSerializer(
             context={'request': Request},
         )
-        validated_data = serializer.validate(data)
+        validated_task = serializer.validate_task(task)
 
-        # Checkfs if the validated_data is identical to the
-        # request.data
-        self.assertEqual(validated_data, data)
+        # Checks if the validate_task method raises no error
+        self.assertEqual(validated_task, task)
